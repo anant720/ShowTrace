@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShadowTrace</title>
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="st-container">
+    <!-- Header -->
+    <header class="st-header">
+      <div class="st-logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L3 7V12C3 17.25 6.75 22.05 12 23C17.25 22.05 21 17.25 21 12V7L12 2Z" 
+                stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.3"/>
+          <path d="M12 2L3 7V12C3 17.25 6.75 22.05 12 23C17.25 22.05 21 17.25 21 12V7L12 2Z" 
+                stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.6"/>
+          <circle cx="12" cy="12" r="1.2" fill="currentColor"/>
+        </svg>
+        <span class="st-title">ShadowTrace</span>
+      </div>
+      <span class="st-version" id="version"></span>
+    </header>
+
+    <!-- Domain Info -->
+    <div class="st-domain-bar">
+      <span class="st-protocol" id="protocol"></span>
+      <span class="st-hostname" id="hostname">Analyzing...</span>
+    </div>
+
+    <!-- Risk Score Card -->
+    <div class="st-risk-card" id="riskCard">
+      <div class="st-risk-score-container">
+        <div class="st-risk-ring" id="riskRing">
+          <svg viewBox="0 0 120 120" class="st-ring-svg">
+            <circle cx="60" cy="60" r="52" class="st-ring-bg"/>
+            <circle cx="60" cy="60" r="52" class="st-ring-fill" id="ringFill"/>
+          </svg>
+          <div class="st-risk-value">
+            <span class="st-score-number" id="scoreNumber">—</span>
+            <span class="st-score-label">RISK SCORE</span>
+          </div>
+        </div>
+      </div>
+      <div class="st-risk-level" id="riskLevel">
+        <span class="st-level-badge" id="levelBadge">SCANNING</span>
+      </div>
+    </div>
+
+    <!-- Risk Reasons -->
+    <div class="st-reasons-section" id="reasonsSection">
+      <div class="st-reasons-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M12 9V13M12 17H12.01M12 3L2 20H22L12 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Detected Signals</span>
+      </div>
+      <ul class="st-reasons-list" id="reasonsList">
+        <li class="st-reason-empty">No threats detected</li>
+      </ul>
+    </div>
+
+    <!-- Signal Summary -->
+    <div class="st-signals-grid" id="signalsGrid">
+      <div class="st-signal-item">
+        <span class="st-signal-label">Protocol</span>
+        <span class="st-signal-value" id="sigProtocol">—</span>
+      </div>
+      <div class="st-signal-item">
+        <span class="st-signal-label">Forms</span>
+        <span class="st-signal-value" id="sigForms">—</span>
+      </div>
+      <div class="st-signal-item">
+        <span class="st-signal-label">Login Form</span>
+        <span class="st-signal-value" id="sigLogin">—</span>
+      </div>
+      <div class="st-signal-item">
+        <span class="st-signal-label">Source</span>
+        <span class="st-signal-value" id="sigSource">—</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="st-footer">
+      <span class="st-status-dot" id="statusDot"></span>
+      <span class="st-status-text" id="statusText">Initializing...</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

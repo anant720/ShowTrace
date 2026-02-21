@@ -1,0 +1,62 @@
+:root {
+  --background: #0a0a0c;
+  --foreground: #e1e1e6;
+  --card-bg: #131316;
+  --card-border: #1f1f23;
+  --primary: #00d4ff;
+  --primary-glow: rgba(0, 212, 255, 0.3);
+  --secondary: #71717a;
+  --accent-red: #ff4d4d;
+  --accent-amber: #ffaa00;
+  --accent-green: #00cc66;
+  --sidebar-width: 260px;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+input {
+  background: #1c1c21;
+  border: 1px solid var(--card-border);
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  outline: none;
+}
+
+input:focus {
+  border-color: var(--primary);
+}
+
+.glass {
+  background: rgba(19, 19, 22, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+}
+
+.glow {
+  box-shadow: 0 0 20px var(--primary-glow);
+}
