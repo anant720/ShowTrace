@@ -44,7 +44,10 @@ export default function ReportsPage() {
                 <p style={{ fontSize: '18px', fontWeight: '500', maxWidth: '500px', margin: '0 auto' }}>
                     Our manual review module is currently aggregating signals. Verified data will appear here shortly.
                 </p>
-                <button style={{ marginTop: '40px', background: 'var(--primary)', color: 'white', padding: '16px 36px', borderRadius: '20px', fontSize: '16px', fontWeight: '700', boxShadow: '0 10px 20px rgba(0, 184, 148, 0.2)' }}>
+                <button
+                    onClick={() => alert('Opening report submission portal...')}
+                    style={{ marginTop: '40px', background: 'var(--primary)', color: 'white', padding: '16px 36px', borderRadius: '20px', fontSize: '16px', fontWeight: '700', boxShadow: '0 10px 20px rgba(0, 184, 148, 0.2)', cursor: 'pointer' }}
+                >
                     Submit Intel
                 </button>
             </div>

@@ -79,7 +79,7 @@ export default function DashboardLayout({ children }) {
                 boxShadow: 'var(--shadow-md)'
             }}>
                 <div style={{ marginBottom: '48px' }}>
-                    <img src="/dashboard_logo.png" alt="Logo" style={{ width: '48px', height: '48px' }} />
+                    <img src="/dashboard_logo.png" alt="Logo" style={{ width: '80px', height: '80px' }} />
                 </div>
                 <nav style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                     <SideMenuItem href="/" svg={
@@ -119,10 +119,7 @@ export default function DashboardLayout({ children }) {
                     marginBottom: '24px'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ padding: '8px', background: 'white', borderRadius: '12px', boxShadow: 'var(--shadow-sm)' }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-                        </div>
-                        <h1 style={{ fontWeight: 800, fontSize: '28px', letterSpacing: '-1px' }}>Dashboard</h1>
+                        <h1 style={{ fontWeight: 800, fontSize: '32px', letterSpacing: '-1.5px', color: 'var(--text-main)' }}>ShadowTrace</h1>
                     </div>
 
                     <div style={{
