@@ -110,6 +110,17 @@ async def get_tld_dist(days: int = 30, db: AsyncIOMotorDatabase = Depends(get_da
         tlds.append({"tld": "."+doc["_id"], "suspicious_scans": doc["count"]})
     return {"tlds": tlds}
 
+@router.get("/recent-scans")
+async def get_recent_scans(limit: int = 10, db: AsyncIOMotorDatabase = Depends(get_database), _user: dict = Depends(require_analyst)):
+    cursor = db.scan_logs.find({}).sort("timestamp", -1).limit(limit)
+    scans = []
+    async for doc in cursor:
+        doc["_id"] = str(doc["_id"])
+        if "timestamp" in doc: doc["timestamp"] = doc["timestamp"].isoformat()
+        scans.append(doc)
+    return {"scans": scans}
+
+
 @router.get("/engine-breakdown")
 async def get_engine_breakdown(db: AsyncIOMotorDatabase = Depends(get_database), _user: dict = Depends(require_analyst)):
     pipeline = [
