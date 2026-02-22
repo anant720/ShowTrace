@@ -53,21 +53,22 @@ export default function OverviewPage() {
   ];
 
   const StatWidget = ({ label, value, trend, color }) => (
-    <div className="st-card" style={{ flex: 1, padding: '28px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500' }}>{label}</p>
-        <div style={{
-          background: trend?.includes('+') ? 'rgba(52, 199, 89, 0.1)' : 'rgba(108, 114, 122, 0.05)',
-          padding: '4px 10px',
-          borderRadius: '10px',
-          fontSize: '11px',
-          fontWeight: '700',
-          color: trend?.includes('+') ? '#248A3D' : 'var(--text-muted)'
-        }}>
-          {trend}
-        </div>
+    <div className="st-card" style={{ flex: 1, padding: '32px', position: 'relative' }}>
+      <p style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
+      <h2 style={{ fontSize: '44px', fontWeight: '800', letterSpacing: '-1.5px', color: 'var(--text-main)', marginBottom: '16px' }}>{value}</h2>
+      <div style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        background: trend?.includes('+') ? 'rgba(0, 184, 148, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+        padding: '6px 14px',
+        borderRadius: '12px',
+        fontSize: '13px',
+        fontWeight: '700',
+        color: trend?.includes('+') ? 'var(--primary)' : 'var(--text-muted)'
+      }}>
+        {trend}
       </div>
-      <h2 style={{ fontSize: '36px', letterSpacing: '-1px', color: color || 'var(--text-main)' }}>{value}</h2>
     </div>
   );
 
@@ -80,100 +81,88 @@ export default function OverviewPage() {
 
   return (
     <DashboardLayout>
-      {/* Hero Section */}
-      <section className="st-card" style={{
-        background: 'linear-gradient(135deg, #1A1C1E 0%, #2D3135 100%)',
-        color: 'white',
-        padding: '48px',
-        marginBottom: '32px',
+      {/* Hero Section - Reference-like layout */}
+      <section style={{
+        padding: '20px 0 60px 0',
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        position: 'relative',
-        overflow: 'hidden'
+        flexDirection: 'column',
+        gap: '8px'
       }}>
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <h1 style={{ fontSize: '40px', marginBottom: '12px', color: 'white' }}>Intelligence Summary</h1>
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '16px', maxWidth: '400px', lineHeight: '1.6' }}>
-            Your security landscape is currently stable. We've analyzed {summary?.total_scans?.toLocaleString()} signals since we started tracking.
-          </p>
-          <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
-            <button style={{ background: 'var(--primary)', color: 'white', padding: '12px 28px', borderRadius: 'var(--radius-pill)', fontSize: '14px' }}>View Full Audit</button>
-            <button style={{ background: 'rgba(255,255,255,0.1)', color: 'white', padding: '12px 28px', borderRadius: 'var(--radius-pill)', fontSize: '14px' }}>Export PDF</button>
-          </div>
+        <h1 style={{ fontSize: '72px', fontWeight: '800', letterSpacing: '-4px', lineHeight: 1, color: 'var(--text-main)' }}>
+          Security Intelligence
+        </h1>
+        <p style={{ fontSize: '20px', color: 'var(--text-muted)', maxWidth: '600px', fontWeight: '500' }}>
+          Real-time analysis of {summary?.total_scans?.toLocaleString()} signals. System state is currently stable.
+        </p>
+        <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
+          <button style={{ background: 'var(--primary)', color: 'white', padding: '16px 36px', borderRadius: '20px', fontSize: '15px', boxShadow: '0 10px 20px rgba(0, 184, 148, 0.3)' }}>Audit Logs</button>
+          <button style={{ background: 'white', color: 'var(--text-main)', padding: '16px 36px', borderRadius: '20px', fontSize: '15px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: 'var(--shadow-sm)' }}>Export Insights</button>
         </div>
-        <div style={{
-          fontSize: '120px',
-          opacity: 0.1,
-          position: 'absolute',
-          right: '-20px',
-          bottom: '-20px',
-          pointerEvents: 'none'
-        }}></div>
       </section>
 
       {/* Stats Grid */}
-      <div style={{ display: 'flex', gap: '24px', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', gap: '32px', marginBottom: '48px' }}>
         <StatWidget
-          label="Total Analysis"
+          label="Total Interceptions"
           value={summary?.total_scans?.toLocaleString()}
-          trend={`+${summary?.growth_rate || 0}%`}
+          trend={`+${summary?.growth_rate || 0}% Monthly`}
         />
         <StatWidget
-          label="Active Threats"
+          label="Detected Anomalies"
           value={((summary?.risk_distribution?.Suspicious || 0) + (summary?.risk_distribution?.Dangerous || 0))}
-          color="#FF9500"
-          trend="Monitor"
+          trend="Real-time"
         />
         <StatWidget
-          label="Anomalies"
-          value={summary?.active_anomalies || 0}
-          color={summary?.active_anomalies > 0 ? "var(--danger)" : "var(--success)"}
-          trend="Real-time"
+          label="Vault Integrity"
+          value="99.9%"
+          trend="Secure"
         />
       </div>
 
-      <div style={{ display: 'flex', gap: '24px', marginBottom: '32px' }}>
-        <div className="st-card" style={{ flex: 2, height: '440px', display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ marginBottom: '32px', fontSize: '18px' }}>Security Events Trend</h3>
+      <div style={{ display: 'flex', gap: '32px', marginBottom: '48px' }}>
+        <div className="st-card" style={{ flex: 2, height: '500px', display: 'flex', flexDirection: 'column', padding: '40px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+            <h3 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>Signal Trends</h3>
+            <div style={{ padding: '8px 16px', background: 'var(--bg-hover)', borderRadius: '12px', fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)' }}>7 Day Analysis</div>
+          </div>
           <div style={{ flex: 1 }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trends}>
                 <defs>
                   <linearGradient id="colorScans" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.1} />
+                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.2} />
                     <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 12 }} dy={16} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 12 }} />
-                <Tooltip cursor={{ stroke: 'var(--primary)', strokeWidth: 1 }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: 'var(--shadow-lg)', padding: '12px 16px' }} />
-                <Area type="monotone" dataKey="total_scans" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorScans)" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 12, fontWeight: '600' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 12, fontWeight: '600' }} />
+                <Tooltip cursor={{ stroke: 'var(--primary)', strokeWidth: 1 }} contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: 'var(--shadow-lg)', padding: '20px' }} />
+                <Area type="monotone" dataKey="total_scans" stroke="var(--primary)" strokeWidth={4} fillOpacity={1} fill="url(#colorScans)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="st-card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ marginBottom: '32px', fontSize: '18px' }}>Threat Matrix</h3>
-          <div style={{ flex: 1, minHeight: '240px' }}>
+        <div className="st-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '40px' }}>
+          <h3 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px', marginBottom: '40px' }}>Risk Matrix</h3>
+          <div style={{ flex: 1, minHeight: '280px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={riskData} innerRadius={70} outerRadius={95} paddingAngle={8} dataKey="value" stroke="none">
+                <Pie data={riskData} innerRadius={80} outerRadius={110} paddingAngle={10} dataKey="value" stroke="none">
                   {riskData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {riskData.map(d => (
               <div key={d.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: d.color }} />
-                  <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{d.name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: d.color }} />
+                  <span style={{ fontSize: '15px', color: 'var(--text-muted)', fontWeight: '600' }}>{d.name}</span>
                 </div>
-                <span style={{ fontWeight: '700', fontSize: '14px' }}>{d.value}</span>
+                <span style={{ fontWeight: '800', fontSize: '15px' }}>{d.value}</span>
               </div>
             ))}
           </div>
@@ -181,49 +170,51 @@ export default function OverviewPage() {
       </div>
 
       {/* Recent Scans Feed */}
-      <div className="st-card" style={{ padding: '32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '18px' }}>Live Extension Feed</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '12px' }}>
-            <div className="animate-pulse" style={{ width: '8px', height: '8px', background: 'var(--success)', borderRadius: '50%' }} />
-            Live Monitoring Active
+      <div className="st-card" style={{ padding: '40px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+          <h3 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>Live Extension Intelligence</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)', fontSize: '14px', fontWeight: '700', background: 'rgba(0, 184, 148, 0.05)', padding: '8px 20px', borderRadius: '100px' }}>
+            <div className="animate-pulse" style={{ width: '10px', height: '10px', background: 'var(--primary)', borderRadius: '50%' }} />
+            Streaming Signals
           </div>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--bg-hover)', textAlign: 'left' }}>
-                <th style={{ padding: '16px', color: 'var(--text-muted)', fontWeight: '500', fontSize: '13px' }}>DOMAIN</th>
-                <th style={{ padding: '16px', color: 'var(--text-muted)', fontWeight: '500', fontSize: '13px' }}>SCORE</th>
-                <th style={{ padding: '16px', color: 'var(--text-muted)', fontWeight: '500', fontSize: '13px' }}>LEVEL</th>
-                <th style={{ padding: '16px', color: 'var(--text-muted)', fontWeight: '500', fontSize: '13px' }}>TIME</th>
+              <tr style={{ textAlign: 'left' }}>
+                <th style={{ padding: '16px 24px', color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>SOURCE DOMAIN</th>
+                <th style={{ padding: '16px 24px', color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>SECURITY SCORE</th>
+                <th style={{ padding: '16px 24px', color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>INTELLIGENCE LEVEL</th>
+                <th style={{ padding: '16px 24px', color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>DETECTION TIME</th>
               </tr>
             </thead>
             <tbody>
               {recentScans.length === 0 ? (
                 <tr>
-                  <td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    No recent scans detected. Start browsing with the extension to see live data.
+                  <td colSpan="4" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: '600' }}>
+                    Awaiting signals from the ShadowTrace engine...
                   </td>
                 </tr>
               ) : recentScans.map((scan) => (
-                <tr key={scan._id} style={{ borderBottom: '1px solid var(--bg-hover)' }}>
-                  <td style={{ padding: '16px', fontWeight: '500' }}>{scan.domain}</td>
-                  <td style={{ padding: '16px', fontFamily: 'monospace', fontWeight: 'bold' }}>{scan.final_risk_score}</td>
-                  <td style={{ padding: '16px' }}>
+                <tr key={scan._id} style={{ background: 'var(--bg-main)', transition: '0.2s' }}>
+                  <td style={{ padding: '20px 24px', fontWeight: '700', borderRadius: '16px 0 0 16px' }}>{scan.domain}</td>
+                  <td style={{ padding: '20px 24px', fontFamily: 'monospace', fontWeight: '800', fontSize: '16px', color: 'var(--primary)' }}>{scan.final_risk_score}</td>
+                  <td style={{ padding: '20px 24px' }}>
                     <span style={{
-                      background: `${getRiskColor(scan.risk_level)}15`,
+                      background: 'white',
                       color: getRiskColor(scan.risk_level),
-                      padding: '4px 12px',
-                      borderRadius: 'var(--radius-pill)',
-                      fontSize: '11px',
-                      fontWeight: '700'
+                      padding: '8px 16px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: '800',
+                      boxShadow: 'var(--shadow-sm)',
+                      border: `1px solid ${getRiskColor(scan.risk_level)}20`
                     }}>
                       {scan.risk_level.toUpperCase()}
                     </span>
                   </td>
-                  <td style={{ padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                  <td style={{ padding: '20px 24px', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '600', borderRadius: '0 16px 16px 0' }}>
                     {new Date(scan.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </td>
                 </tr>

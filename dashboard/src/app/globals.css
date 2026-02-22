@@ -1,34 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Premium Dark Palette */
-  --bg-main: #0A0A0B;
-  --bg-card: #161618;
-  --bg-sidebar: #161618;
-  --bg-hover: #1C1C1E;
+  /* Premium Neutral Palette (Based on Reference) */
+  --bg-main: #E5E5E7;
+  --bg-card: #FFFFFF;
+  --bg-sidebar: #FFFFFF;
+  --bg-hover: #F2F2F7;
 
-  --text-main: #FFFFFF;
-  --text-muted: #A1A1AA;
-  --text-accent: #3E94FF;
+  --text-main: #1C1C1E;
+  --text-muted: #8E8E93;
+  --text-accent: #00B894;
+  /* Emerald Green from Ref */
 
-  --primary: #3E94FF;
-  --primary-soft: rgba(62, 148, 255, 0.1);
-  --success: #32D74B;
-  --warning: #FFD60A;
-  --danger: #FF453A;
+  --primary: #00B894;
+  --primary-soft: rgba(0, 184, 148, 0.1);
+  --success: #00B894;
+  --warning: #FFCC00;
+  --danger: #FF3B30;
 
-  /* System Tokens */
-  --radius-card: 20px;
+  /* System Tokens - Reference uses large 40px radius */
+  --radius-card: 40px;
   --radius-pill: 100px;
-  --radius-button: 12px;
+  --radius-button: 20px;
 
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.08);
 
-  --sidebar-width: 80px;
-  --topbar-height: 80px;
-  --padding-page: 32px;
+  --sidebar-width: 100px;
+  --topbar-height: 100px;
+  --padding-page: 48px;
 }
 
 * {
