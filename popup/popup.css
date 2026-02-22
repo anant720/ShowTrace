@@ -542,3 +542,160 @@ body {
   --st-risk-glow: var(--st-red);
   --st-risk-bg: var(--st-red-bg);
 }
+
+/* ── Network Monitor Section ───────────────────────────────────── */
+.st-network-section {
+  background: var(--st-bg-glass);
+  border: 1px solid var(--st-border);
+  border-radius: var(--st-radius-sm);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.st-network-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--st-text-secondary);
+  border-bottom: 1px solid var(--st-border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.st-network-header svg {
+  color: var(--st-blue);
+}
+
+.st-icon-btn {
+  background: var(--st-bg-glass);
+  border: 1px solid var(--st-border);
+  color: var(--st-text-secondary);
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.st-icon-btn:hover {
+  background: var(--st-bg-secondary);
+  color: var(--st-text-primary);
+  border-color: var(--st-text-muted);
+}
+
+.st-network-list {
+  max-height: 120px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.st-network-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.st-network-list::-webkit-scrollbar-thumb {
+  background: var(--st-border);
+  border-radius: 2px;
+}
+
+.st-network-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--st-border-subtle);
+  font-family: var(--st-font-mono);
+  font-size: 10.5px;
+}
+
+.st-network-item:last-child {
+  border-bottom: none;
+}
+
+.st-method {
+  font-weight: 700;
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  min-width: 36px;
+  text-align: center;
+}
+
+.st-method.GET {
+  background: var(--st-green-bg);
+  color: var(--st-green);
+}
+
+.st-method.POST {
+  background: var(--st-amber-bg);
+  color: var(--st-amber);
+}
+
+.st-method.PUT,
+.st-method.PATCH {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--st-blue);
+}
+
+.st-method.DELETE {
+  background: var(--st-red-bg);
+  color: var(--st-red);
+}
+
+.st-url {
+  color: var(--st-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.st-network-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--st-text-muted);
+  font-style: italic;
+  font-size: 11px;
+}
+
+/* ── Footer ────────────────────────────────────────────────────── */
+
+.st-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 4px 4px;
+  border-top: 1px solid var(--st-border-subtle);
+}
+
+.st-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--st-text-muted);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.4s ease;
+}
+
+.st-status-dot.online {
+  background: var(--st-green);
+  box-shadow: 0 0 8px var(--st-green-bg);
+}
+
+.st-status-dot.offline {
+  background: var(--st-red);
+}
+
+.st-status-text {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--st-text-secondary);
+  text-transform: uppercase;
+}
