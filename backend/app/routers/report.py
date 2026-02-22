@@ -8,8 +8,8 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.dependencies import get_database, verify_api_key
-from app.models.schemas import ReportRequest, ReportResponse
+from app.dependencies import get_database, verify_api_key, require_analyst
+from app.models.schemas import ReportRequest, ReportResponse, CorrectionRequest
 
 logger = logging.getLogger("shadowtrace.routers.report")
 router = APIRouter(tags=["Reporting"])
