@@ -22,9 +22,21 @@
     window.addEventListener('message', e => {
         if (e.source !== window || !e.data || e.data.type !== 'ST_INJECT_DATA') return;
         const p = e.data.payload;
-        if (p.kind === 'credential_bearing_request') {
+
+        if (p.kind === 'external_fetch') {
+            behavior.externalFetchDetected = true;
+            triggerScan(1000);
+        } else if (p.kind === 'external_xhr') {
+            behavior.externalXHRDetected = true;
+            triggerScan(1000);
+        } else if (p.kind === 'credential_bearing_request') {
             console.warn('[ShadowTrace] Suspicious submission detected');
-            behavior.suspiciousSubmissions.push({ type: 'credential_bearing', destination: p.destination });
+            behavior.suspiciousSubmissions.push({
+                type: 'credential_bearing',
+                destination: p.destination,
+                method: p.method,
+                timestamp: p.timestamp
+            });
             triggerScan(0);
         }
     });

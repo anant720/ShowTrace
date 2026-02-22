@@ -79,6 +79,11 @@ class EnsembleScorer:
         
         # Network Behavioral Signals
         if f.get("post_ratio", 0) > 0.3: score += 30 
+        
+        # Injection-based Behavioral Signals
+        if f.get("external_fetch_detected"): score += 20
+        if f.get("external_xhr_detected"): score += 20
+        if f.get("suspicious_submission_count", 0) > 0: score += 60 # High confidence trigger
         return min(score, 100)
 
     def _predict_l3(self, f: Dict[str, float]) -> float:
@@ -89,6 +94,7 @@ class EnsembleScorer:
         if f.get("form_traps", 0) > 0: score += 50
         if f.get("has_login"): score += 20
         if f.get("has_keylogger"): score += 60
+        if f.get("suspicious_submission_count", 0) > 0: score += 80 # Critical semantic signal
         return min(score, 100)
 
     def _predict_l4(self, f: Dict[str, float]) -> float:
