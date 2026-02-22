@@ -22,13 +22,30 @@ async def report_domain(
     _api_key: str = Depends(verify_api_key),
 ) -> ReportResponse:
     logger.info(f"Received report for domain: {request.domain}")
-
-    # Insert report
     await db.reports.insert_one({
         "domain": request.domain,
         "reason": request.reason,
         "timestamp": datetime.now(timezone.utc),
     })
+    return ReportResponse(status="ok", message="Report logged")
+
+@router.post("/correction", summary="Analyst correction (Ground Truth)")
+async def submit_correction(
+    request: CorrectionRequest,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    _user: dict = Depends(require_analyst)
+):
+    await db.ground_truth.update_one(
+        {"domain": request.domain},
+        {"$set": {
+            "label": request.actual_risk,
+            "analyst": _user.get("email"),
+            "timestamp": datetime.now(timezone.utc),
+            "notes": request.analyst_notes
+        }},
+        upsert=True
+    )
+    return {"status": "ok", "message": "Ground truth updated"}
 
     # Count reports
     report_count = await db.reports.count_documents({"domain": request.domain})

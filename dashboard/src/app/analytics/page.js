@@ -5,7 +5,7 @@ import { apiRequest } from '@/utils/api';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    LineChart, Line, AreaChart, Area
+    LineChart, Line, AreaChart, Area, Treemap
 } from 'recharts';
 
 export default function AnalyticsPage() {
@@ -131,6 +131,60 @@ export default function AnalyticsPage() {
                             </div>
                         );
                     })}
+                </div>
+            </div>
+            <div className="st-card" style={{ padding: '40px', marginTop: '32px', minHeight: '500px', display: 'flex', flexDirection: 'column' }}>
+                <h3 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px', marginBottom: '40px' }}>Global Threat Heatmap</h3>
+                <div style={{ flex: 1, width: '100%', minHeight: '350px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <Treemap
+                            data={[
+                                {
+                                    name: 'Phishing Vectors', children: [
+                                        { name: 'Credential Harvesting', size: 4500, color: '#FF3B30' },
+                                        { name: 'Social Engineering', size: 3000, color: '#FF9500' },
+                                        { name: 'Brand Mimicry', size: 2000, color: '#FFCC00' }
+                                    ]
+                                },
+                                {
+                                    name: 'Malware Distribution', children: [
+                                        { name: 'Drive-by Downloads', size: 4000, color: '#AF52DE' },
+                                        { name: 'Exploit Kits', size: 2500, color: '#5856D6' }
+                                    ]
+                                },
+                                {
+                                    name: 'Obfuscation Techniques', children: [
+                                        { name: 'JS Hex Encoding', size: 3500, color: '#5AC8FA' },
+                                        { name: 'CSS Overlay Traps', size: 1500, color: '#007AFF' }
+                                    ]
+                                }
+                            ]}
+                            dataKey="size"
+                            aspectRatio={4 / 3}
+                            stroke="#fff"
+                            fill="#8884d8"
+                        >
+                            <Tooltip content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                    return (
+                                        <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: 'var(--shadow-lg)' }}>
+                                            <p style={{ fontWeight: '800', color: 'var(--text-main)' }}>{payload[0].payload.name}</p>
+                                            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Confidence Level: High</p>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            }} />
+                        </Treemap>
+                    </ResponsiveContainer>
+                </div>
+                <div style={{ marginTop: '24px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                    {['Critical Threats', 'Emerging Vectors', 'Monitoring'].map((tag, idx) => (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: idx === 0 ? '#FF3B30' : idx === 1 ? '#FF9500' : '#5AC8FA' }} />
+                            <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)' }}>{tag}</span>
+                        </div>
+                    ))}
                 </div>
             </div>
         </DashboardLayout>

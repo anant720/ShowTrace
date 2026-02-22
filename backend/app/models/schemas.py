@@ -119,10 +119,11 @@ class ReportRequest(BaseModel):
     domain: str = Field(..., min_length=1, max_length=253)
     reason: str = Field(..., min_length=1, max_length=1000)
 
-    @field_validator("domain")
-    @classmethod
-    def sanitize_domain(cls, v: str) -> str:
-        return v.strip().lower()
+
+class CorrectionRequest(BaseModel):
+    domain: str
+    actual_risk: str  # Safe / Dangerous
+    analyst_notes: Optional[str] = None
 
 
 # ── Response Models ──────────────────────────────────────────────────
