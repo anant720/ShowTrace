@@ -109,7 +109,7 @@ export default function OverviewPage() {
           right: '-20px',
           bottom: '-20px',
           pointerEvents: 'none'
-        }}>🛡️</div>
+        }}></div>
       </section>
 
       {/* Stats Grid */}
@@ -193,7 +193,7 @@ export default function OverviewPage() {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #F0F2F5', textAlign: 'left' }}>
+              <tr style={{ borderBottom: '1px solid var(--bg-hover)', textAlign: 'left' }}>
                 <th style={{ padding: '16px', color: 'var(--text-muted)', fontWeight: '500', fontSize: '13px' }}>DOMAIN</th>
                 <th style={{ padding: '16px', color: 'var(--text-muted)', fontWeight: '500', fontSize: '13px' }}>SCORE</th>
                 <th style={{ padding: '16px', color: 'var(--text-muted)', fontWeight: '500', fontSize: '13px' }}>LEVEL</th>
@@ -208,7 +208,7 @@ export default function OverviewPage() {
                   </td>
                 </tr>
               ) : recentScans.map((scan) => (
-                <tr key={scan._id} style={{ borderBottom: '1px solid #F0F2F5' }}>
+                <tr key={scan._id} style={{ borderBottom: '1px solid var(--bg-hover)' }}>
                   <td style={{ padding: '16px', fontWeight: '500' }}>{scan.domain}</td>
                   <td style={{ padding: '16px', fontFamily: 'monospace', fontWeight: 'bold' }}>{scan.final_risk_score}</td>
                   <td style={{ padding: '16px' }}>

@@ -124,6 +124,8 @@
 
     // ── Scanning State ──────────────────────────────────────────────
     function setScanning(tab) {
+        const container = document.querySelector('.st-container');
+        container.setAttribute('data-state', 'scanning');
         try {
             const url = new URL(tab.url);
             els.hostname.textContent = url.hostname;

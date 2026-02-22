@@ -32,47 +32,79 @@ export default function LoginPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'radial-gradient(circle at center, #1a1a2e 0%, #0a0a0c 100%)'
+            background: '#0A0A0B',
+            color: 'white'
         }}>
-            <div className="glass" style={{
-                padding: '40px',
-                borderRadius: '16px',
+            <div style={{
+                padding: '48px',
+                borderRadius: '24px',
                 width: '100%',
-                maxWidth: '400px',
-                textAlign: 'center'
+                maxWidth: '420px',
+                textAlign: 'center',
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
             }}>
-                <h1 style={{ marginBottom: '8px', color: 'var(--primary)' }}>ShadowTrace</h1>
-                <p style={{ color: 'var(--secondary)', marginBottom: '32px' }}>Enterprise Admin Access</p>
+                <img
+                    src="/dashboard_logo.png"
+                    alt="ShadowTrace Logo"
+                    style={{ width: '80px', height: '80px', marginBottom: '24px' }}
+                />
+                <h1 style={{ fontSize: '32px', marginBottom: '8px', fontWeight: '700', letterSpacing: '-0.5px' }}>ShadowTrace</h1>
+                <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '32px', fontSize: '14px' }}>Secure Enterprise Gateway</p>
 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <input
                         type="text"
-                        placeholder="Username"
+                        placeholder="Identity Identifier"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
+                        style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            color: 'white',
+                            padding: '16px',
+                            borderRadius: '12px',
+                            fontSize: '15px'
+                        }}
                     />
                     <input
                         type="password"
-                        placeholder="Password"
+                        placeholder="Security Key"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            color: 'white',
+                            padding: '16px',
+                            borderRadius: '12px',
+                            fontSize: '15px'
+                        }}
                     />
 
-                    {error && <p style={{ color: 'var(--accent-red)', fontSize: '14px' }}>{error}</p>}
+                    {error && <p style={{ color: '#FF453A', fontSize: '13px', textAlign: 'left' }}>{error}</p>}
 
                     <button
                         type="submit"
                         disabled={loading}
                         style={{
-                            padding: '14px',
-                            background: 'var(--primary)',
+                            padding: '16px',
+                            background: 'white',
                             color: 'black',
-                            marginTop: '16px'
+                            marginTop: '12px',
+                            borderRadius: '12px',
+                            fontWeight: '700',
+                            fontSize: '15px',
+                            transition: 'all 0.3s'
                         }}
+                        onMouseOver={(e) => e.target.style.opacity = '0.9'}
+                        onMouseOut={(e) => e.target.style.opacity = '1'}
                     >
-                        {loading ? 'Authenticating...' : 'Secure Login'}
+                        {loading ? 'Processing...' : 'Access Intelligence'}
                     </button>
                 </form>
             </div>
