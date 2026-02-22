@@ -25,10 +25,8 @@
     const RING_CIRCUMFERENCE = 2 * Math.PI * 52;
 
     async function init() {
-
         const manifest = chrome.runtime.getManifest();
         els.version.textContent = `v${manifest.version}`;
-
 
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tab) {
@@ -36,33 +34,41 @@
             return;
         }
 
+        // ── Phase 1: Instant Local Display ──────────────────────────
+        setScanning(tab);
 
+        // ── Phase 2: Check Session for Result ───────────────────────
         chrome.runtime.sendMessage(
             { type: 'ST_GET_RISK', tabId: tab.id },
-            (data) => {
+            async (data) => {
                 if (chrome.runtime.lastError) {
-                    setError('Extension error');
+                    setError('Extension sync error');
                     return;
                 }
 
                 if (!data) {
-                    setScanning(tab);
+                    // Send a warm-up ping to backend via background to minimize cold-start
+                    chrome.runtime.sendMessage({ type: 'ST_WARM_UP' });
                     return;
                 }
 
+                // If result is ready, render it instantly
                 renderRiskData(data);
             }
         );
     }
-
 
     function renderRiskData(data) {
         const container = document.querySelector('.st-container');
         const riskLevel = data.risk_level || 'unknown';
         const riskScore = typeof data.risk_score === 'number' ? data.risk_score : 0;
 
-
+        // Exit scanning state
+        container.removeAttribute('data-state');
         container.setAttribute('data-risk', riskLevel);
+
+        if ($('scoreLabel')) $('scoreLabel').textContent = 'RISK SCORE';
+        if ($('scoreLabel')) $('scoreLabel').style.animation = 'none';
 
 
         if (data.domain) {

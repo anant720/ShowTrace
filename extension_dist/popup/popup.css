@@ -378,41 +378,119 @@ body {
   color: var(--st-text-primary);
 }
 
-/* ── Footer ────────────────────────────────────────────────────── */
+/* ── Radar Overhaul ────────────────────────────────────────────── */
 
-.st-footer {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding-top: 8px;
-  border-top: 1px solid var(--st-border);
+.st-radar-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 1;
 }
 
-.st-status-dot {
-  width: 6px;
-  height: 6px;
+[data-state="scanning"] .st-radar-container {
+  opacity: 1;
+}
+
+.st-radar-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 184, 148, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 184, 148, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: center center;
+  mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
+}
+
+.st-radar-sweep {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(from 0deg, transparent 0% 80%, rgba(0, 184, 148, 0.2) 100%);
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: radar-sweep 2.5s linear infinite;
   border-radius: 50%;
-  background: var(--st-text-muted);
-  flex-shrink: 0;
 }
 
-.st-status-dot.online {
-  background: var(--st-green);
-  box-shadow: 0 0 6px var(--st-green);
-  animation: pulse 2s ease-in-out infinite;
+.st-radar-blip {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--st-primary, #00b894);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--st-primary, #00b894);
+  opacity: 0;
+  animation: blip-pulse 4s infinite;
 }
 
-.st-status-dot.offline {
-  background: var(--st-amber);
-  box-shadow: 0 0 6px var(--st-amber);
+.blip-1 {
+  top: 30%;
+  left: 40%;
+  animation-delay: 0.5s;
 }
 
-.st-status-text {
-  font-size: 10px;
-  color: var(--st-text-muted);
+.blip-2 {
+  top: 60%;
+  left: 70%;
+  animation-delay: 1.2s;
 }
 
-/* ── Animations ────────────────────────────────────────────────── */
+.blip-3 {
+  top: 75%;
+  left: 30%;
+  animation-delay: 2.8s;
+}
+
+@keyframes radar-sweep {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes blip-pulse {
+
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  20%,
+  40% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+[data-state="scanning"] .st-score-label {
+  animation: text-pulse 1.5s infinite;
+  color: var(--st-green);
+}
+
+@keyframes text-pulse {
+
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────── */
 
 @keyframes pulse {
 
@@ -426,46 +504,27 @@ body {
   }
 }
 
-@keyframes scan-rotate {
+[data-state="scanning"] .st-ring-fill {
+  stroke-dashoffset: 0;
+  stroke: var(--st-green);
+  animation: scan-pulse-fast 1s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+  stroke-dasharray: 4 8;
+  opacity: 0.4;
+}
+
+@keyframes scan-pulse-fast {
   from {
-    transform: rotate(0deg);
+    stroke-opacity: 0.2;
+    stroke-dashoffset: 20;
   }
 
   to {
-    transform: rotate(360deg);
+    stroke-opacity: 0.6;
+    stroke-dashoffset: 0;
   }
 }
 
-@keyframes scan-pulse {
-  0% {
-    opacity: 0.3;
-    transform: scale(0.95);
-  }
-
-  50% {
-    opacity: 0.7;
-    transform: scale(1.05);
-  }
-
-  100% {
-    opacity: 0.3;
-    transform: scale(0.95);
-  }
-}
-
-[data-state="scanning"] .st-ring-fill {
-  stroke-dashoffset: 0;
-  stroke: var(--st-blue);
-  animation: scan-pulse 2s infinite ease-in-out;
-  stroke-dasharray: 20 10;
-}
-
-[data-state="scanning"] .st-risk-ring {
-  animation: scan-rotate 10s linear infinite;
-}
-
-/* ── Risk-level theme overrides (set via JS data attribute) ──── */
-
+/* Risk-level theme overrides (set via JS data attribute) */
 [data-risk="low"] {
   --st-risk-color: var(--st-green);
   --st-risk-glow: var(--st-green);

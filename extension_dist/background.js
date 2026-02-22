@@ -22,6 +22,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (!tabId) return;
         handleSignalReport(tabId, message.payload);
         sendResponse({ received: true });
+    } else if (message.type === 'ST_WARM_UP') {
+        fetch(CONFIG.API_ENDPOINT, { method: 'HEAD' }).catch(() => { });
+        return false;
     } else if (message.type === CONFIG.MSG_TYPE.GET_RISK) {
         chrome.storage.session.get(`tab_${message.tabId}`).then(data => {
             sendResponse(data[`tab_${message.tabId}`] || null);

@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ShadowTrace</title>
   <link rel="stylesheet" href="popup.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
 </head>
+
 <body>
   <div class="st-container">
     <!-- Header -->
@@ -26,20 +30,28 @@
 
     <!-- Risk Score Card -->
     <div class="st-risk-card" id="riskCard">
+      <div class="st-radar-container" id="radarContainer">
+        <div class="st-radar-grid"></div>
+        <div class="st-radar-sweep"></div>
+        <div class="st-radar-blip blip-1"></div>
+        <div class="st-radar-blip blip-2"></div>
+        <div class="st-radar-blip blip-3"></div>
+      </div>
+
       <div class="st-risk-score-container">
         <div class="st-risk-ring" id="riskRing">
           <svg viewBox="0 0 120 120" class="st-ring-svg">
-            <circle cx="60" cy="60" r="52" class="st-ring-bg"/>
-            <circle cx="60" cy="60" r="52" class="st-ring-fill" id="ringFill"/>
+            <circle cx="60" cy="60" r="52" class="st-ring-bg" />
+            <circle cx="60" cy="60" r="52" class="st-ring-fill" id="ringFill" />
           </svg>
           <div class="st-risk-value">
             <span class="st-score-number" id="scoreNumber">—</span>
-            <span class="st-score-label">RISK SCORE</span>
+            <span class="st-score-label" id="scoreLabel">ANALYZING</span>
           </div>
         </div>
       </div>
       <div class="st-risk-level" id="riskLevel">
-        <span class="st-level-badge" id="levelBadge">SCANNING</span>
+        <span class="st-level-badge" id="levelBadge">NEURAL SCAN ACTIVE</span>
       </div>
     </div>
 
@@ -47,7 +59,8 @@
     <div class="st-reasons-section" id="reasonsSection">
       <div class="st-reasons-header">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M12 9V13M12 17H12.01M12 3L2 20H22L12 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 9V13M12 17H12.01M12 3L2 20H22L12 3Z" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         <span>Detected Signals</span>
       </div>
@@ -85,4 +98,5 @@
 
   <script src="popup.js"></script>
 </body>
+
 </html>
