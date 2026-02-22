@@ -4,14 +4,15 @@ import { useEffect, useState } from 'react';
 import { apiRequest } from '@/utils/api';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    LineChart, Line, AreaChart, Area, Treemap
+    BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+    AreaChart, Area, Treemap
 } from 'recharts';
 
 export default function AnalyticsPage() {
     const [trends, setTrends] = useState([]);
     const [tlds, setTlds] = useState([]);
     const [engines, setEngines] = useState({});
+    const [recentScans, setRecentScans] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

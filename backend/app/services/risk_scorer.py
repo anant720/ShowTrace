@@ -39,6 +39,7 @@ async def evaluate(request: AnalyzeRequest, db: AsyncIOMotorDatabase) -> Analyze
                 "reasons": analysis["reasons"],
                 "engine_scores": analysis["layer_scores"],
                 "explainability": analysis["explainability"],
+                "network_requests": raw_payload.get("network_requests", []),
                 "timestamp": now,
             }
             await db.scan_logs.insert_one(log_entry)

@@ -7,6 +7,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 export default function AuditPage() {
     const [scans, setScans] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedScan, setSelectedScan] = useState(null);
 
     const fetchScans = async () => {
         try {
@@ -21,7 +22,7 @@ export default function AuditPage() {
 
     useEffect(() => {
         fetchScans();
-        const interval = setInterval(fetchScans, 15000);
+        const interval = setInterval(fetchScans, 5000);
         return () => clearInterval(interval);
     }, []);
 
@@ -95,8 +96,14 @@ export default function AuditPage() {
                                                 {scan.risk_level.toUpperCase()}
                                             </span>
                                         </td>
-                                        <td style={{ padding: '20px 24px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: '500', borderRadius: '0 16px 16px 0' }}>
-                                            Analysis complete. No behavioral bypass detected.
+                                        <td style={{ padding: '20px 24px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: '500', borderRadius: '0 16px 16px 0', textAlign: 'right' }}>
+                                            <button
+                                                onClick={() => setSelectedScan(scan)}
+                                                className="st-btn-secondary"
+                                                style={{ fontSize: '11px', padding: '6px 16px' }}
+                                            >
+                                                Forensics
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
@@ -105,6 +112,64 @@ export default function AuditPage() {
                     </table>
                 </div>
             </div>
+
+            {selectedScan && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                    <div className="st-card" style={{ width: '100%', maxWidth: '900px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+                        <div style={{ padding: '32px', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                                <h2 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>Forensic Report: {selectedScan.domain}</h2>
+                                <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>ID: {selectedScan._id} | {new Date(selectedScan.timestamp).toLocaleString()}</p>
+                            </div>
+                            <button onClick={() => setSelectedScan(null)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: 'var(--text-muted)' }}>&times;</button>
+                        </div>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '32px' }}>
+                                <div style={{ background: 'var(--bg-main)', padding: '20px', borderRadius: '16px' }}>
+                                    <p style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Consensus Risk</p>
+                                    <h4 style={{ fontSize: '24px', fontWeight: '800', color: getRiskColor(selectedScan.risk_level) }}>{selectedScan.final_risk_score}</h4>
+                                </div>
+                                <div style={{ background: 'var(--bg-main)', padding: '20px', borderRadius: '16px' }}>
+                                    <p style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Match Confidence</p>
+                                    <h4 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--primary)' }}>{selectedScan.confidence}%</h4>
+                                </div>
+                                <div style={{ background: 'var(--bg-main)', padding: '20px', borderRadius: '16px' }}>
+                                    <p style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Requests Logged</p>
+                                    <h4 style={{ fontSize: '24px', fontWeight: '800' }}>{selectedScan.network_requests?.length || 0}</h4>
+                                </div>
+                            </div>
+
+                            <h3 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '16px' }}>Captured Network Traffic</h3>
+                            {selectedScan.network_requests && selectedScan.network_requests.length > 0 ? (
+                                <div style={{ background: 'var(--bg-main)', borderRadius: '16px', padding: '12px', border: '1px solid rgba(0,0,0,0.02)' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                                                <th style={{ padding: '12px', fontSize: '10px', color: 'var(--text-muted)' }}>METHOD</th>
+                                                <th style={{ padding: '12px', fontSize: '10px', color: 'var(--text-muted)' }}>TYPE</th>
+                                                <th style={{ padding: '12px', fontSize: '10px', color: 'var(--text-muted)' }}>URL</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {selectedScan.network_requests.map((req, i) => (
+                                                <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.02)' }}>
+                                                    <td style={{ padding: '12px', fontSize: '12px', fontWeight: '800', color: req.method === 'POST' ? 'var(--warning)' : 'var(--primary)' }}>{req.method}</td>
+                                                    <td style={{ padding: '12px', fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)' }}>{req.type}</td>
+                                                    <td style={{ padding: '12px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{req.url}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div style={{ padding: '32px', textAlign: 'center', background: 'var(--bg-main)', borderRadius: '16px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                                    No granular network traffic was persisted for this scan event.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 }
