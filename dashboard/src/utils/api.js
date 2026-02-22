@@ -20,20 +20,31 @@ export const apiRequest = async (endpoint, method = 'GET', body = null) => {
         options.body = JSON.stringify(body);
     }
 
-    const response = await fetch(`${API_BASE}${endpoint}`, options);
+    const url = `${API_BASE}${endpoint}`;
+    console.log(`[API Request] ${method} ${url}`);
 
-    if (response.status === 401) {
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('st_token');
-            window.location.href = '/login';
+    try {
+        const response = await fetch(url, options);
+
+        if (response.status === 401) {
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('st_token');
+                window.location.href = '/login';
+            }
+            throw new Error('Unauthorized');
         }
-        throw new Error('Unauthorized');
-    }
 
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'API Request failed');
-    }
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || `API Error: ${response.status}`);
+        }
 
-    return response.json();
+        return response.json();
+    } catch (err) {
+        console.error(`[API Fetch Error] ${url}:`, err);
+        if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+            throw new Error('Network error: Could not connect to backend. Please check CORS settings or if the backend is live.');
+        }
+        throw err;
+    }
 };
