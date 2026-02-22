@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import connect_db, close_db, get_db
-from app.middleware.auth import APIKeyMiddleware
+from app.middleware.auth import OAuthMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.routers import analyze, report, stats
 from app.utils.logging import setup_logging
