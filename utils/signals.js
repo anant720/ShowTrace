@@ -55,6 +55,86 @@ const STSignals = (() => {
             tld,
             isSuspiciousTLD,
             fullURL: href,
+            entropy: calculateEntropy(hostname),
+        };
+    }
+
+    /**
+     * Calculate Shannon Entropy of a string to detect DGA/Randomness.
+     */
+    function calculateEntropy(str) {
+        const len = str.length;
+        if (len === 0) return 0;
+        const frequencies = {};
+        for (let char of str) frequencies[char] = (frequencies[char] || 0) + 1;
+        return Object.values(frequencies).reduce((sum, f) => {
+            const p = f / len;
+            return sum - p * Math.log2(p);
+        }, 0);
+    }
+
+    /**
+     * Scan for indicators of JavaScript obfuscation or malicious scripting.
+     */
+    function analyzeJSObfuscation() {
+        const scripts = Array.from(document.scripts);
+        let evalCount = 0;
+        let largeHexCount = 0;
+        let totalScriptSize = 0;
+
+        scripts.forEach(s => {
+            const content = s.textContent || '';
+            totalScriptSize += content.length;
+            if (content.includes('eval(')) evalCount++;
+            if ((content.match(/0x[0-9a-fA-F]{4,}/g) || []).length > 5) largeHexCount++;
+        });
+
+        return {
+            scriptCount: scripts.length,
+            totalScriptSize,
+            evalCount,
+            largeHexCount,
+            hasSuspiciousFunctions: evalCount > 0 || largeHexCount > 0
+        };
+    }
+
+    /**
+     * Analyze event listeners and form interaction behaviors.
+     */
+    function monitorEventListeners() {
+        const inputs = Array.from(document.querySelectorAll('input'));
+        let suspiciousHandlers = 0;
+
+        inputs.forEach(input => {
+            if (input.hasAttribute('onpaste') || input.hasAttribute('oncopy') || input.hasAttribute('oninput')) {
+                suspiciousHandlers++;
+            }
+        });
+
+        return {
+            inputCount: inputs.length,
+            suspiciousHandlerCount: suspiciousHandlers,
+            hasGlobalKeylogger: !!document.onkeydown || !!document.onkeypress
+        };
+    }
+
+    /**
+     * Detect hidden DOM elements used for phishing (off-screen forms, hidden inputs).
+     */
+    function collectFormTraps() {
+        const hiddenForms = Array.from(document.querySelectorAll('form')).filter(f => {
+            const style = window.getComputedStyle(f);
+            return style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0';
+        });
+
+        const offscreenElements = Array.from(document.querySelectorAll('input, form')).filter(el => {
+            const rect = el.getBoundingClientRect();
+            return rect.left < 0 || rect.top < 0 || rect.width === 0 || rect.height === 0;
+        });
+
+        return {
+            hiddenFormCount: hiddenForms.length,
+            offscreenElementCount: offscreenElements.length
         };
     }
 
@@ -145,9 +225,13 @@ const STSignals = (() => {
     function buildPayload(domainSignals, formSignals, behaviorSignals) {
         return {
             timestamp: new Date().toISOString(),
+            fullURL: window.location.href,
             domain: domainSignals,
             forms: formSignals,
             behavior: behaviorSignals,
+            ml_behavior: analyzeJSObfuscation(),
+            interaction: monitorEventListeners(),
+            traps: collectFormTraps(),
             meta: {
                 extensionVersion: chrome.runtime.getManifest().version,
                 userAgent: navigator.userAgent,

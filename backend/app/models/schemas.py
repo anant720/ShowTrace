@@ -47,6 +47,25 @@ class BehaviorSignals(BaseModel):
     suspiciousSubmissions: Optional[List[dict]] = Field(default_factory=list)
 
 
+class MLBehaviorSignals(BaseModel):
+    scriptCount: int = 0
+    totalScriptSize: int = 0
+    evalCount: int = 0
+    largeHexCount: int = 0
+    hasSuspiciousFunctions: bool = False
+
+
+class InteractionSignals(BaseModel):
+    inputCount: int = 0
+    suspiciousHandlerCount: int = 0
+    hasGlobalKeylogger: bool = False
+
+
+class TrapSignals(BaseModel):
+    hiddenFormCount: int = 0
+    offscreenElementCount: int = 0
+
+
 class MetaInfo(BaseModel):
     extensionVersion: Optional[str] = None
     userAgent: Optional[str] = Field(default=None, max_length=512)
@@ -54,9 +73,13 @@ class MetaInfo(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     timestamp: Optional[str] = None
+    fullURL: Optional[str] = None
     domain: DomainSignals
     forms: Optional[FormSignals] = Field(default_factory=FormSignals)
     behavior: Optional[BehaviorSignals] = Field(default_factory=BehaviorSignals)
+    ml_behavior: Optional[MLBehaviorSignals] = Field(default_factory=MLBehaviorSignals)
+    interaction: Optional[InteractionSignals] = Field(default_factory=InteractionSignals)
+    traps: Optional[TrapSignals] = Field(default_factory=TrapSignals)
     meta: Optional[MetaInfo] = None
 
     class Config:
@@ -96,10 +119,12 @@ class ReportRequest(BaseModel):
 # ── Response Models ──────────────────────────────────────────────────
 
 class AnalyzeResponse(BaseModel):
-    risk_score: int = Field(..., ge=0, le=100)
+    risk_score: float = Field(..., ge=0, le=100)
     risk_level: str = Field(...)  # Safe / Suspicious / Dangerous
     reasons: List[str] = Field(default_factory=list)
+    confidence: float = 1.0
     engine_scores: Optional[dict] = None
+    explainability: Optional[dict] = None
 
 
 class ReportResponse(BaseModel):
