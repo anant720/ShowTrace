@@ -15,6 +15,7 @@ class FeatureEngineer:
         ml_behavior = payload.get("ml_behavior", {})
         interaction = payload.get("interaction", {})
         traps = payload.get("traps", {})
+        forms = payload.get("forms", {})
         network_reqs = payload.get("network_requests", [])
         
         full_url = payload.get("full_url", "")
@@ -30,6 +31,7 @@ class FeatureEngineer:
         features["suspicious_handlers"] = float(interaction.get("suspiciousHandlerCount", 0))
         features["form_traps"] = float(traps.get("hiddenFormCount", 0) + traps.get("offscreenElementCount", 0))
         features["has_keylogger"] = 1.0 if interaction.get("hasGlobalKeylogger") else 0.0
+        features["has_login"] = 1.0 if forms.get("hasLoginForm") else 0.0
         
         # --- Network-Level features (New) ---
         req_count = len(network_reqs)

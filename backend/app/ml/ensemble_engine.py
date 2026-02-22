@@ -64,6 +64,9 @@ class EnsembleScorer:
         if f.get("dot_count", 0) > 3: score += 20
         if f.get("special_char_count", 0) > 5: score += 20
         if f.get("is_ip"): score += 50
+        
+        # Base lexical risk for complexity
+        score += min(10, f.get("url_length", 0) / 20)
         return min(score, 100)
 
     def _predict_l2(self, f: Dict[str, float]) -> float:
@@ -81,14 +84,16 @@ class EnsembleScorer:
     def _predict_l3(self, f: Dict[str, float]) -> float:
         """Lightweight Semantic Prediction (Mock DistilBERT)."""
         # In production, this would be a DistilBERT inference call
-        score = 0
-        # If L2 is high, L3 usually follows in phishing
-        if f.get("form_traps", 0) > 0: score += 60
+        score = 5.0 # Baseline sensitivity
+        # If L2 is high or login form is present, L3 evaluates phishing potential
+        if f.get("form_traps", 0) > 0: score += 50
+        if f.get("has_login"): score += 20
+        if f.get("has_keylogger"): score += 60
         return min(score, 100)
 
     def _predict_l4(self, f: Dict[str, float]) -> float:
         """Lightweight Anomaly Prediction logic."""
-        score = 10.0 # Baseline
+        score = 15.0 # Increased baseline for dynamic range
         if f.get("external_request_ratio", 0) > 0.6: score += 50
         if f.get("network_request_count", 0) > 30: score += 20
         return min(score, 100)
