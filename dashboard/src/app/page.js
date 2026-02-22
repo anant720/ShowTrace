@@ -235,6 +235,3 @@ export default function OverviewPage() {
     </DashboardLayout>
   );
 }
-    </DashboardLayout >
-  );
-}
