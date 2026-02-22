@@ -5,7 +5,7 @@ import json
 class Settings(BaseSettings):
     MONGO_URI: str = "mongodb://localhost:27017"
     MONGO_DB_NAME: str = "shadowtrace"
-    API_KEY: str = "shadowtrace-dev-key"
+    API_KEY: str = "st_api_kG9vX2mN8pL4wR5tZ1yQ7jS4nB0hF3d_"
     CORS_ORIGINS: str = '["http://localhost:3000"]'
     JWT_SECRET: str = "shadowtrace-jwt-secret-change-in-production"
     JWT_ALGORITHM: str = "HS256"
@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> List[str]:
         # Default local origins for development
-        defaults = ["http://localhost:3000", "http://127.0.0.1:3000"]
+        defaults = ["http://localhost:3000", "http://127.0.0.1:3000", "chrome-extension://*"]
         
         if not self.CORS_ORIGINS:
             return defaults

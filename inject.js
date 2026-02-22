@@ -1,7 +1,7 @@
 (() => {
     'use strict';
 
-    const MSG_KEY = '__SHADOWTRACE_INJECT__';
+    const MSG_KEY = 'ST_INJECT_DATA';
     const pageHostname = window.location.hostname;
 
     function isExternalDomain(urlString) {

@@ -65,8 +65,8 @@
         container.setAttribute('data-risk', riskLevel);
 
 
-        if (data.signals?.domain) {
-            const domain = data.signals.domain;
+        if (data.domain) {
+            const domain = data.domain;
             els.protocol.textContent = domain.protocol?.toUpperCase() || '—';
             els.protocol.className = `st-protocol ${domain.isHTTPS ? 'secure' : 'insecure'}`;
             els.hostname.textContent = domain.hostname || 'Unknown';
@@ -78,7 +78,7 @@
 
         const offset = RING_CIRCUMFERENCE - (riskScore / 100) * RING_CIRCUMFERENCE;
         els.ringFill.style.strokeDashoffset = offset;
-        els.scoreNumber.textContent = riskScore;
+        els.scoreNumber.textContent = riskScore || 0;
 
         // Risk level badge
         const levelLabels = { low: 'LOW RISK', medium: 'MEDIUM RISK', high: 'HIGH RISK' };
@@ -95,9 +95,9 @@
         }
 
         // Signal summary grid
-        if (data.signals) {
-            const domain = data.signals.domain || {};
-            const forms = data.signals.forms || {};
+        if (data.domain || data.forms) {
+            const domain = data.domain || {};
+            const forms = data.forms || {};
 
             els.sigProtocol.textContent = domain.isHTTPS ? 'HTTPS' : 'HTTP';
             els.sigProtocol.style.color = domain.isHTTPS

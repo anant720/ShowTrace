@@ -27,26 +27,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
 });
 
-async function handleSignalReport(tabId, payload) {
+async function handleSignalReport(tab_id, payload) {
+    // Clear old data for this tab immediately to avoid showing stale results
+    await chrome.storage.session.remove(`tab_${tab_id}`);
+
     let risk;
     try {
         risk = await sendToBackend(payload);
     } catch (err) {
-        risk = { risk_score: 0, risk_level: 'low', reasons: [], source: 'local' };
+        console.error('Scan failed:', err);
+        risk = { risk_score: 0, risk_level: 'low', reasons: ['Analysis engine unreachable'], source: 'local' };
     }
-    await chrome.storage.session.set({ [`tab_${tabId}`]: { ...risk, ...payload } });
-    updateBadge(tabId, risk.risk_level);
+    await chrome.storage.session.set({ [`tab_${tab_id}`]: { ...risk, ...payload } });
+    updateBadge(tab_id, risk.risk_level);
 }
 
 async function getAuthToken() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         chrome.identity.getAuthToken({ interactive: true }, (token) => {
             if (chrome.runtime.lastError) {
-                console.warn('Google Identity error:', chrome.runtime.lastError);
+                console.warn('Auth Error:', chrome.runtime.lastError.message);
                 resolve(null);
-            } else {
-                resolve(token);
-            }
+            } else resolve(token);
         });
     });
 }
@@ -59,7 +61,6 @@ async function sendToBackend(payload, retry = 0) {
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         } else {
-            // Fallback for when identity is not configured yet
             headers['X-API-Key'] = CONFIG.API_KEY;
         }
 
