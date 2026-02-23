@@ -203,7 +203,7 @@
             <div class="m-header-list">
                 <div class="m-header-item"><span class="m-header-name">Type:</span> <span class="m-header-value">${req.type}</span></div>
                 <div class="m-header-item"><span class="m-header-name">Timestamp:</span> <span class="m-header-value">${new Date(req.timestamp).toISOString()}</span></div>
-                <div class="m-header-item"><span class="m-header-name">Request ID:</span> <span class="m-header-value">${req.id}</span></div>
+                <div class="m-header-item"><span class="m-header-name">Request ID:</span> <span class="m-header-value">${String(req.id)}</span></div>
                 ${req.error ? `<div class="m-header-item" style="color: #ef4444"><span class="m-header-name">Error:</span> <span class="m-header-value">${req.error}</span></div>` : ''}
             </div>
         `;

@@ -13,8 +13,36 @@ const CONFIG = {
     MAX_REQUESTS_LOGGED: 50
 };
 
-// ── Network Monitor (Burp Suite Mode) ───────────────────────────────
-const requestBuffer = {};
+// ── Network Monitor (Burp Suite Mode - Suspension Tolerant) ─────────────────
+
+async function getFromBuffer(requestId) {
+    const key = `buf_${requestId}`;
+    const data = await chrome.storage.session.get(key);
+    return data[key];
+}
+
+async function saveToBuffer(requestId, data) {
+    await chrome.storage.session.set({ [`buf_${requestId}`]: data });
+}
+
+async function finalizeRequest(requestId, tabId, updates = {}) {
+    const key = `buf_${requestId}`;
+    const bufferData = await getFromBuffer(requestId);
+    if (!bufferData) return;
+
+    const finalizedReq = { ...bufferData, ...updates };
+
+    // Move to persistent tab logs
+    const logKey = `reqs_${tabId}`;
+    const storageData = await chrome.storage.session.get(logKey);
+    const reqs = storageData[logKey] || [];
+
+    reqs.unshift(finalizedReq);
+    if (reqs.length > CONFIG.MAX_REQUESTS_LOGGED) reqs.pop();
+
+    await chrome.storage.session.set({ [logKey]: reqs });
+    await chrome.storage.session.remove(key);
+}
 
 chrome.webRequest.onBeforeRequest.addListener(
     (details) => {
@@ -32,26 +60,30 @@ chrome.webRequest.onBeforeRequest.addListener(
             }
         }
 
-        requestBuffer[details.requestId] = {
+        const initialData = {
             id: details.requestId,
             url: details.url,
             method: details.method,
             type: details.type,
+            tabId: details.tabId,
             timestamp: Date.now(),
             requestBody: rawBody,
             requestHeaders: [],
             responseHeaders: [],
             statusCode: 0
         };
+        saveToBuffer(details.requestId, initialData);
     },
     { urls: ["<all_urls>"] },
     ["requestBody"]
 );
 
 chrome.webRequest.onBeforeSendHeaders.addListener(
-    (details) => {
-        if (requestBuffer[details.requestId]) {
-            requestBuffer[details.requestId].requestHeaders = details.requestHeaders || [];
+    async (details) => {
+        const req = await getFromBuffer(details.requestId);
+        if (req) {
+            req.requestHeaders = details.requestHeaders || [];
+            await saveToBuffer(details.requestId, req);
         }
     },
     { urls: ["<all_urls>"] },
@@ -59,20 +91,21 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 );
 
 chrome.webRequest.onHeadersReceived.addListener(
-    (details) => {
-        const req = requestBuffer[details.requestId];
+    async (details) => {
+        const req = await getFromBuffer(details.requestId);
         if (req) {
             req.responseHeaders = details.responseHeaders || [];
             req.statusCode = details.statusCode;
-
-            chrome.storage.session.get(`reqs_${details.tabId}`).then(data => {
-                const reqs = data[`reqs_${details.tabId}`] || [];
-                reqs.unshift(req);
-                if (reqs.length > CONFIG.MAX_REQUESTS_LOGGED) reqs.pop();
-                chrome.storage.session.set({ [`reqs_${details.tabId}`]: reqs });
-            });
-            delete requestBuffer[details.requestId];
+            await saveToBuffer(details.requestId, req);
         }
+    },
+    { urls: ["<all_urls>"] },
+    ["responseHeaders", "extraHeaders"]
+);
+
+chrome.webRequest.onCompleted.addListener(
+    (details) => {
+        finalizeRequest(details.requestId, details.tabId);
     },
     { urls: ["<all_urls>"] },
     ["responseHeaders", "extraHeaders"]
@@ -80,19 +113,10 @@ chrome.webRequest.onHeadersReceived.addListener(
 
 chrome.webRequest.onErrorOccurred.addListener(
     (details) => {
-        const req = requestBuffer[details.requestId];
-        if (req) {
-            req.statusCode = 0; // Indicates failure/blocked
-            req.error = details.error;
-
-            chrome.storage.session.get(`reqs_${details.tabId}`).then(data => {
-                const reqs = data[`reqs_${details.tabId}`] || [];
-                reqs.unshift(req);
-                if (reqs.length > CONFIG.MAX_REQUESTS_LOGGED) reqs.pop();
-                chrome.storage.session.set({ [`reqs_${details.tabId}`]: reqs });
-            });
-            delete requestBuffer[details.requestId];
-        }
+        finalizeRequest(details.requestId, details.tabId, {
+            statusCode: 0,
+            error: details.error || 'Request Interrupted'
+        });
     },
     { urls: ["<all_urls>"] }
 );
