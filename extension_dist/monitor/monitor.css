@@ -1,6 +1,7 @@
 :root {
     --m-bg: #030712;
     --m-surface: #0F172A;
+    --m-surface-light: #1E293B;
     --m-border: rgba(255, 255, 255, 0.08);
     --m-primary: #10B981;
     --m-text: #F9FAFB;
@@ -8,6 +9,7 @@
     --m-risk-low: #10B981;
     --m-risk-med: #F59E0B;
     --m-risk-high: #EF4444;
+    --m-accent: #3b82f6;
 }
 
 * {
@@ -30,6 +32,7 @@ body {
     height: 100vh;
 }
 
+/* ── Header ────────────────────────────────────────────────────────── */
 .m-header {
     height: 80px;
     display: flex;
@@ -50,6 +53,7 @@ body {
     font-size: 20px;
     font-weight: 800;
     letter-spacing: -0.5px;
+    color: var(--m-text);
 }
 
 .m-title-group p {
@@ -87,146 +91,91 @@ body {
     box-shadow: 0 0 10px var(--m-primary);
 }
 
+/* ── Main Layout ───────────────────────────────────────────────────── */
 .m-main {
     flex: 1;
     overflow: hidden;
     padding: 24px;
     display: flex;
     gap: 20px;
+    background: var(--m-bg);
 }
 
 .m-table-container {
     flex: 1;
-    background: white;
+    background: var(--m-surface);
     border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--m-border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     overflow: auto;
 }
 
+/* ── Inspector ──────────────────────────────────────────────────────── */
 .m-inspector {
     width: 0;
-    background: #f8fafc;
+    background: var(--m-surface);
     border-radius: 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--m-border);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-width 0.1s;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .m-inspector.open {
-    width: 450px;
-    border-width: 1px;
+    width: 500px;
+    border-left: 1px solid var(--m-border);
 }
 
 .m-inspector-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--m-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: white;
+    background: var(--m-surface-light);
 }
 
 .m-inspector-header h2 {
     font-size: 14px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--m-text);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .m-close-btn {
-    background: none;
+    background: rgba(255, 255, 255, 0.05);
     border: none;
-    font-size: 24px;
-    color: #64748b;
+    font-size: 20px;
+    color: var(--m-text-muted);
     cursor: pointer;
     line-height: 1;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.m-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--m-text);
 }
 
 .m-inspector-content {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 24px;
 }
 
-.m-section-title {
-    font-size: 11px;
-    font-weight: 700;
-    color: #475569;
-    margin: 20px 0 10px 0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.m-section-title:first-child {
-    margin-top: 0;
-}
-
-.m-header-list {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    padding: 12px;
-}
-
-.m-header-item {
-    display: flex;
-    margin-bottom: 4px;
-    word-break: break-all;
-}
-
-.m-header-name {
-    color: #ef4444;
-    font-weight: 700;
-    margin-right: 8px;
-    white-space: nowrap;
-}
-
-.m-header-value {
-    color: #0f172a;
-}
-
-.m-status-pill {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    margin-bottom: 15px;
-}
-
-.m-status-pill.success {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.m-status-pill.error {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.m-status-pill.redirect {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-tr.selected {
-    background: #eff6ff !important;
-}
-
-tr.selected td {
-    border-top: 1px solid #3b82f6;
-    border-bottom: 1px solid #3b82f6;
-}
-
+/* ── Table Styles ──────────────────────────────────────────────────── */
 table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
 th {
@@ -237,58 +186,140 @@ th {
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--m-text-muted);
+    background: var(--m-surface-light);
     border-bottom: 1px solid var(--m-border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 td {
-    padding: 16px 24px;
-    font-size: 14px;
+    padding: 14px 24px;
+    font-size: 13px;
     border-bottom: 1px solid var(--m-border);
     font-family: 'JetBrains Mono', monospace;
+    color: var(--m-text);
+    vertical-align: middle;
 }
 
 tr:hover {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.03);
 }
 
+tr.selected {
+    background: rgba(59, 130, 246, 0.1) !important;
+}
+
+tr.selected td {
+    color: var(--m-accent);
+}
+
+/* ── Components ────────────────────────────────────────────────────── */
 .m-method {
     font-weight: 800;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
     font-size: 10px;
+    display: inline-block;
 }
 
 .m-method.GET {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(16, 185, 129, 0.15);
     color: #10B981;
 }
 
 .m-method.POST {
-    background: rgba(245, 158, 11, 0.1);
+    background: rgba(245, 158, 11, 0.15);
     color: #F59E0B;
 }
 
 .m-url {
     color: var(--m-text-muted);
-    max-width: 400px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.m-risk-tag {
-    font-weight: 700;
+.m-status-pill {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 6px;
     font-size: 11px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
 }
 
-.m-risk-low {
-    color: var(--m-risk-low);
+.m-status-pill.success {
+    background: rgba(52, 211, 153, 0.1);
+    color: #34d399;
 }
 
-.m-risk-high {
+.m-status-pill.error {
+    background: rgba(248, 113, 113, 0.1);
+    color: #f87171;
+}
+
+.m-status-pill.redirect {
+    background: rgba(251, 191, 36, 0.1);
+    color: #fbbf24;
+}
+
+/* ── Inspector Details ─────────────────────────────────────────────── */
+.m-section-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--m-text-muted);
+    margin: 24px 0 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.m-section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--m-border);
+}
+
+.m-section-title:first-child {
+    margin-top: 0;
+}
+
+.m-header-list {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--m-border);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 16px;
+}
+
+.m-header-item {
+    display: flex;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.m-header-item:last-child {
+    margin-bottom: 0;
+}
+
+.m-header-name {
     color: var(--m-risk-high);
+    font-weight: 700;
+    margin-right: 12px;
+    white-space: nowrap;
 }
 
+.m-header-value {
+    color: var(--m-text);
+    word-break: break-all;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────── */
 .m-footer {
     height: 48px;
     background: var(--m-surface);
@@ -311,7 +342,7 @@ tr:hover {
 }
 
 .m-btn-secondary {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--m-border);
     color: var(--m-text);
     padding: 8px 16px;
@@ -319,8 +350,29 @@ tr:hover {
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s;
 }
 
 .m-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--m-text-muted);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--m-border);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--m-text-muted);
 }
