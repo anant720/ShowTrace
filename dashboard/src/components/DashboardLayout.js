@@ -73,13 +73,16 @@ export default function DashboardLayout({ children }) {
                 flexDirection: 'column',
                 alignItems: 'center',
                 padding: '32px 0',
-                position: 'fixed',
-                height: 'calc(100vh - 48px)',
+                position: 'sticky',
+                top: 'var(--padding-page)',
+                height: 'calc(100vh - (var(--padding-page) * 2))',
                 zIndex: 100,
                 boxShadow: 'var(--shadow-md)',
-                transition: 'transform 0.3s ease, width 0.3s ease',
-                transform: 'var(--sidebar-width) === "0px" ? "translateX(-150%)" : "translateX(0)"',
-                visibility: 'var(--sidebar-width) === "0px" ? "hidden" : "visible"',
+                transition: 'all 0.3s ease',
+                opacity: (pathname === '/login' || (typeof window !== 'undefined' && window.innerWidth <= 1024)) ? 0 : 1,
+                pointerEvents: (pathname === '/login' || (typeof window !== 'undefined' && window.innerWidth <= 1024)) ? 'none' : 'auto',
+                marginRight: '32px',
+                flexShrink: 0,
                 overflow: 'hidden'
             }}>
                 <div style={{ marginBottom: '48px' }}>
@@ -145,11 +148,11 @@ export default function DashboardLayout({ children }) {
 
             {/* Main Wrapper */}
             <div style={{
-                marginLeft: 'var(--sidebar-width)',
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
-                transition: 'margin 0.3s ease'
+                transition: 'all 0.3s ease',
+                minWidth: 0 // Prevent flex overflow
             }}>
                 {/* Top Bar */}
                 <header style={{
