@@ -7,6 +7,7 @@ from app.ml.ensemble_engine import EnsembleScorer
 from app.ml.whitelist_manager import WhitelistManager
 from app.ml.normalization import Normalizer
 from app.ml.security_auditor import SecurityAuditor
+from app.utils.scrubber import CredentialScrubber
 
 logger = logging.getLogger("shadowtrace.services.risk_scorer")
 scorer = EnsembleScorer()
@@ -65,7 +66,9 @@ async def evaluate(request: AnalyzeRequest, db: AsyncIOMotorDatabase) -> Analyze
         
         # 4. Persistence
         try:
-            now = datetime.now(timezone.utc)
+            # Scrub sensitive data before persisting logs
+            scrubbed_requests = CredentialScrubber.scrub_requests(network_reqs)
+            
             log_entry = {
                 "domain": domain_name,
                 "full_url": normalized_url,
@@ -78,7 +81,7 @@ async def evaluate(request: AnalyzeRequest, db: AsyncIOMotorDatabase) -> Analyze
                 "security_score": security_score,
                 "security_findings": combined_findings,
                 "explainability": analysis["explainability"],
-                "network_requests": network_reqs,
+                "network_requests": scrubbed_requests,
                 "timestamp": now,
             }
             await db.scan_logs.insert_one(log_entry)

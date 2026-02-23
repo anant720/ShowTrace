@@ -1,6 +1,11 @@
 (() => {
     'use strict';
 
+    function maskSensitive(val) {
+        if (!val || val.length <= 4) return '****';
+        return val.substring(0, 4) + '****************';
+    }
+
     function extractSensitiveData(req) {
         const sensitive = [];
         const body = (req.requestBody || '').toLowerCase();
@@ -13,33 +18,31 @@
         credPatterns.forEach(pattern => {
             if (body.includes(pattern)) {
                 // Try to extract value from JSON or Form
-                const match = body.match(new RegExp(`"${pattern}"\\s*:\\s*"([^"]+)"`)) ||
-                    body.match(new RegExp(`${pattern}=([^&]+)`));
-                if (match) sensitive.push({ type: 'CREDENTIAL', field: pattern, value: match[1] });
+                const match = body.match(new RegExp(`"${pattern}"\\s*:\\s*"([^"]+)"`, 'i')) ||
+                    body.match(new RegExp(`${pattern}=([^&]+)`, 'i'));
+                if (match) sensitive.push({ type: 'CREDENTIAL', field: pattern, value: maskSensitive(match[1]) });
             }
         });
 
         // Check Headers (Auth / Cookies)
         headers.forEach(h => {
             const name = h.name.toLowerCase();
-            const val = h.value.toLowerCase();
 
             // Authorization Headers
             if (name === 'authorization' || name === 'x-api-key' || name === 'x-auth-token') {
-                sensitive.push({ type: 'AUTH_HEADER', field: h.name, value: h.value });
+                sensitive.push({ type: 'AUTH_HEADER', field: h.name, value: maskSensitive(h.value) });
             }
 
             // Session Cookies
             if (name === 'cookie') {
-                // More aggressive session cookie regex (matches common ones like connect.sid, PHPSESSID, etc.)
                 const sessionPatterns = [
                     /(sess|session|sid|id|jwt|auth|token)=([^;]+)/gi,
                     /(phpsessid|jsessionid|aspsessionid|connect\.sid|laravel_session|sessionid)=([^;]+)/gi
                 ];
                 sessionPatterns.forEach(regex => {
-                    const sessionMatches = h.value.match(regex);
-                    if (sessionMatches) {
-                        sessionMatches.forEach(m => sensitive.push({ type: 'SESSION_ID', field: 'Cookie', value: m }));
+                    let m;
+                    while ((m = regex.exec(h.value)) !== null) {
+                        sensitive.push({ type: 'SESSION_ID', field: 'Cookie', value: `${m[1]}=${maskSensitive(m[2])}` });
                     }
                 });
             }

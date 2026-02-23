@@ -162,14 +162,30 @@ export default function AuditPage() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {selectedScan.network_requests.map((req, i) => (
-                                                <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.02)' }}>
-                                                    <td style={{ padding: '12px', fontSize: '12px', fontWeight: '800', color: req.method === 'POST' ? 'var(--warning)' : 'var(--primary)' }}>{req.method}</td>
-                                                    <td style={{ padding: '12px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{formatForensicTime(req.timestamp)}</td>
-                                                    <td style={{ padding: '12px', fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)' }}>{req.type}</td>
-                                                    <td style={{ padding: '12px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{req.url}</td>
-                                                </tr>
-                                            ))}
+                                            {selectedScan.network_requests.map((req, i) => {
+                                                const maskSensitive = (val) => {
+                                                    if (!val) return val;
+                                                    // Simple masking for dashboard display
+                                                    const sensitiveKeys = ['pass', 'secret', 'token', 'jwt', 'apikey', 'key', 'auth'];
+                                                    let maskedUrl = val;
+                                                    sensitiveKeys.forEach(key => {
+                                                        const regex = new RegExp(`([?&]${key}=)([^&]+)`, 'gi');
+                                                        maskedUrl = maskedUrl.replace(regex, '$1[REDACTED]');
+                                                    });
+                                                    return maskedUrl;
+                                                };
+
+                                                return (
+                                                    <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.02)' }}>
+                                                        <td style={{ padding: '12px', fontSize: '12px', fontWeight: '800', color: req.method === 'POST' ? 'var(--warning)' : 'var(--primary)' }}>{req.method}</td>
+                                                        <td style={{ padding: '12px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{formatForensicTime(req.timestamp)}</td>
+                                                        <td style={{ padding: '12px', fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)' }}>{req.type}</td>
+                                                        <td style={{ padding: '12px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-secondary)', maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={req.url}>
+                                                            {maskSensitive(req.url)}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>

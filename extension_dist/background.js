@@ -10,10 +10,22 @@ const CONFIG = {
         GET_RISK: 'ST_GET_RISK',
     },
     RISK_LEVELS: { Safe: 'low', Suspicious: 'medium', Dangerous: 'high' },
-    MAX_REQUESTS_LOGGED: 50
+    MAX_REQUESTS_LOGGED: 50,
+    EXCLUDED_DOMAINS: [
+        'showtrace.onrender.com',
+        'localhost',
+        'shadow-trace-dashboard.vercel.app'
+    ]
 };
 
 // ── Network Monitor (Burp Suite Mode - Suspension Tolerant) ─────────────────
+
+function isExcluded(url) {
+    try {
+        const hostname = new URL(url).hostname;
+        return CONFIG.EXCLUDED_DOMAINS.some(domain => hostname.includes(domain));
+    } catch (e) { return false; }
+}
 
 async function getFromBuffer(requestId) {
     const key = `buf_${requestId}`;
@@ -46,7 +58,7 @@ async function finalizeRequest(requestId, tabId, updates = {}) {
 
 chrome.webRequest.onBeforeRequest.addListener(
     (details) => {
-        if (details.tabId <= 0) return;
+        if (details.tabId <= 0 || isExcluded(details.url)) return;
 
         let rawBody = null;
         if (details.requestBody) {
