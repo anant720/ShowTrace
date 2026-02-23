@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "ShadowTrace",
-    "version": "1.0.0",
-    "description": "Real-Time Browser-Based Phishing & Credential Exfiltration Detection Engine",
+    "name": "ShadowTrace: AI Phishing Protection",
+    "version": "1.1.0",
+    "description": "Enterpise-grade AI engine that detects phishing, credential exfiltration, and adversarial URL attacks in real-time.",
     "permissions": [
         "activeTab",
         "storage",

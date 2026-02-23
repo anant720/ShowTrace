@@ -33,3 +33,7 @@ Thumbs.db
 .gemini/
 backend/.env
 dashboard/.env
+extension_dist/
+*.log
+.DS_Store
+Thumbs.db
