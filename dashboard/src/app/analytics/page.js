@@ -14,6 +14,9 @@ export default function AnalyticsPage() {
     const [engines, setEngines] = useState({});
     const [recentScans, setRecentScans] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedDomain, setSelectedDomain] = useState('');
+    const [domainPosture, setDomainPosture] = useState(null);
+    const [fetchingPosture, setFetchingPosture] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -27,7 +30,11 @@ export default function AnalyticsPage() {
                 setTrends(trendData.trends);
                 setTlds(tldData.tlds);
                 setEngines(engineData.engines);
-                setRecentScans(recentData.scans || []);
+                const recent = recentData.scans || [];
+                setRecentScans(recent);
+                if (recent.length > 0 && !selectedDomain) {
+                    setSelectedDomain(recent[0].domain);
+                }
             } catch (err) {
                 console.error('Failed to fetch analytics:', err);
             } finally {
@@ -37,15 +44,34 @@ export default function AnalyticsPage() {
         fetchData();
     }, []);
 
+    useEffect(() => {
+        if (!selectedDomain) return;
+
+        const fetchPosture = async () => {
+            setFetchingPosture(true);
+            try {
+                const data = await apiRequest(`/analytics/domain-posture/${selectedDomain}`);
+                if (data.status !== 'no_data') {
+                    setDomainPosture(data);
+                }
+            } catch (err) {
+                console.error('Failed to fetch domain posture:', err);
+            } finally {
+                setFetchingPosture(false);
+            }
+        };
+        fetchPosture();
+    }, [selectedDomain]);
+
     if (loading) return (
         <DashboardLayout>
             <div style={{ color: 'var(--secondary)' }}>Aggregating Global Threat Data...</div>
         </DashboardLayout>
     );
 
-    const latestScan = recentScans[0] || {};
-    const securityScore = latestScan.security_score ?? 92;
-    const findings = latestScan.security_findings || [];
+    const displayData = domainPosture || recentScans.find(s => s.domain === selectedDomain) || recentScans[0] || {};
+    const securityScore = displayData.security_score ?? 92;
+    const findings = displayData.security_findings || [];
 
     return (
         <DashboardLayout>
@@ -56,6 +82,29 @@ export default function AnalyticsPage() {
                 <p style={{ fontSize: 'clamp(16px, 2vw, 20px)', color: 'var(--text-muted)', maxWidth: '600px', fontWeight: '500' }}>
                     Deep dive into threat vectors and defensive security posture across the enterprise.
                 </p>
+
+                <div style={{ marginTop: '32px', display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Target Domain:</label>
+                    <select
+                        value={selectedDomain}
+                        onChange={(e) => setSelectedDomain(e.target.value)}
+                        style={{
+                            background: 'var(--bg-main)',
+                            border: '1px solid rgba(0,0,0,0.05)',
+                            padding: '10px 20px',
+                            borderRadius: '12px',
+                            color: 'var(--text-main)',
+                            fontWeight: '700',
+                            outline: 'none',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        {recentScans.map(scan => (
+                            <option key={scan.id || scan.domain} value={scan.domain}>{scan.domain}</option>
+                        ))}
+                    </select>
+                    {fetchingPosture && <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: '600' }}>Updating Audit...</span>}
+                </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--grid-gap)', marginBottom: '48px' }}>
@@ -92,8 +141,8 @@ export default function AnalyticsPage() {
                         </div>
                         <div style={{ flex: 1 }}>
                             <div style={{ marginBottom: '24px' }}>
-                                <p style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>LATEST AUDIT</p>
-                                <p style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{latestScan.domain || 'N/A'}</p>
+                                <p style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>AUDIT TARGET</p>
+                                <p style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{displayData.domain || 'N/A'}</p>
                             </div>
                             <div style={{ display: 'flex', gap: '32px' }}>
                                 <div>
@@ -163,7 +212,7 @@ export default function AnalyticsPage() {
                                             <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{finding.description}</p>
                                         </td>
                                         <td style={{ padding: '16px', fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)' }}>
-                                            {latestScan.domain}
+                                            {displayData.domain}
                                         </td>
                                     </tr>
                                 )) : (
@@ -209,7 +258,7 @@ export default function AnalyticsPage() {
                         { id: 'L3', name: 'Semantic NLP', desc: 'Intent & Phishing Content', color: '#6366f1' },
                         { id: 'L4', name: 'Anomaly (IsoForest)', desc: 'Novel Attack Detection', color: '#ec4899' }
                     ].map((layer) => {
-                        const score = latestScan?.engine_scores?.[layer.id] || 85;
+                        const score = displayData?.engine_scores?.[layer.id] || 85;
                         return (
                             <div key={layer.id} style={{ background: 'var(--bg-main)', padding: '24px', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.03)', position: 'relative' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>

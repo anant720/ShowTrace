@@ -99,7 +99,10 @@ async def acknowledge_anomaly(anomaly_id: str, db: AsyncIOMotorDatabase = Depend
 async def get_tld_dist(days: int = 30, db: AsyncIOMotorDatabase = Depends(get_database), _user: dict = Depends(require_analyst)):
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     pipeline = [
-        {"$match": {"timestamp": {"$gte": cutoff}}},
+        {"$match": {
+            "timestamp": {"$gte": cutoff},
+            "risk_level": {"$in": ["Suspicious", "Dangerous"]}
+        }},
         {"$project": {"tld": {"$arrayElemAt": [{"$split": ["$domain", "."]}, -1]}}},
         {"$group": {"_id": "$tld", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}},
@@ -142,3 +145,18 @@ async def get_engine_breakdown(db: AsyncIOMotorDatabase = Depends(get_database),
         "L3": {"avg_score": round(res["l3"] or 0, 1), "max_score": 100, "weight": "40%"},
         "L4": {"avg_score": round(res["l4"] or 0, 1), "max_score": 100, "weight": "10%"}
     }}
+
+@router.get("/domain-posture/{domain}")
+async def get_domain_posture(domain: str, db: AsyncIOMotorDatabase = Depends(get_database), _user: dict = Depends(require_analyst)):
+    # Get the latest scan for this specific domain
+    doc = await db.scan_logs.find_one({"domain": domain}, sort=[("timestamp", -1)])
+    if not doc:
+        return {"status": "no_data", "message": f"No scan data found for domain: {domain}"}
+    
+    return {
+        "domain": doc["domain"],
+        "security_score": doc.get("security_score", 0),
+        "security_findings": doc.get("security_findings", []),
+        "timestamp": doc["timestamp"].isoformat() if "timestamp" in doc else None,
+        "engine_scores": doc.get("engine_scores", {})
+    }
