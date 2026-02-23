@@ -20,7 +20,7 @@ class SecurityAuditor:
                 "id": "MISSING_CSP",
                 "severity": "medium",
                 "title": "Missing Content Security Policy",
-                "description": "CSP is not configured, increasing the risk of XSS attacks."
+                "description": "CSP target headers are absent, facilitating XSS and data injection."
             })
             
         # 2. HSTS Check
@@ -29,7 +29,7 @@ class SecurityAuditor:
                 "id": "MISSING_HSTS",
                 "severity": "low",
                 "title": "Missing HSTS",
-                "description": "HTTP Strict Transport Security is not enabled."
+                "description": "HTTP Strict Transport Security is not enforced, allowing downgrade attacks."
             })
 
         # 3. Secure Cookies
@@ -40,21 +40,40 @@ class SecurityAuditor:
                     "id": "INSECURE_COOKIE",
                     "severity": "medium",
                     "title": "Insecure Cookie Configuration",
-                    "description": "Cookies detected without 'Secure' or 'HttpOnly' flags."
+                    "description": "Sensitive cookies detected without Secure/HttpOnly flags."
                 })
 
-        # 4. CORS Check
+        # 4. Clickjacking (X-Frame-Options)
+        if 'x-frame-options' not in h_map and 'frame-ancestors' not in h_map.get('content-security-policy', ''):
+            findings.append({
+                "id": "CLICKJACKING_RISK",
+                "severity": "medium",
+                "title": "Missing Clickjacking Protection",
+                "description": "X-Frame-Options is not set, allowing the site to be embedded in malicious iframes."
+            })
+
+        # 5. Feature/Permissions Policy
+        if 'permissions-policy' not in h_map and 'feature-policy' not in h_map:
+             findings.append({
+                "id": "MISSING_PERMISSIONS_POLICY",
+                "severity": "low",
+                "title": "Insecure Permissions Policy",
+                "description": "Missing browser feature controls (camera, microphone, geolocation)."
+            })
+
+        # 6. CORS Check
         if h_map.get('access-control-allow-origin') == '*':
             findings.append({
                 "id": "PERMISSIVE_CORS",
                 "severity": "medium",
                 "title": "Overly Permissive CORS Policy",
-                "description": "Access-Control-Allow-Origin is set to '*', allowing any domain to read responses."
+                "description": "Access-Control-Allow-Origin is set to '*', violating same-origin principles."
             })
 
         # Calculate Score (0-100, 100 is best)
-        missing_penalty = len([f for f in findings if f['severity'] in ['medium', 'high']]) * 20
-        score = max(0, 100 - missing_penalty)
+        severity_weights = {"high": 30, "medium": 15, "low": 5}
+        penalty = sum(severity_weights.get(f['severity'], 0) for f in findings)
+        score = max(0, 100 - penalty)
         
         return {
             "score": score,
@@ -70,21 +89,30 @@ class SecurityAuditor:
             url = req.get('url', '').lower()
             
             # 1. Exposed Secret Detect (Passive URLs)
-            if any(ext in url for ext in ['.env', '.git', '.aws', '.config']):
+            if any(ext in url for ext in ['.env', '.git', '.aws', '.config', '.sql', '.backup']):
                 findings.append({
                     "id": "SENSITIVE_FILE_EXPOSURE",
                     "severity": "high",
                     "title": "Sensitive File Exposure",
-                    "description": f"Observed request to potentially sensitive file: {url}"
+                    "description": f"Observed suspicious request to: {url}"
                 })
             
             # 2. Insecure Methods (Passive)
-            if req.get('method') in ['TRACE', 'OPTIONS'] and req.get('statusCode') == 200:
+            if req.get('method') in ['TRACE', 'TRACK', 'DEBUG'] and req.get('statusCode') == 200:
                 findings.append({
                     "id": "INSECURE_METHOD",
-                    "severity": "low",
-                    "title": f"Insecure HTTP Method {req.get('method')}",
-                    "description": f"Endpoint {url} allows {req.get('method')}."
+                    "severity": "medium",
+                    "title": f"Dangerous HTTP Method: {req.get('method')}",
+                    "description": f"Endpoint {url} allows administrative/diagnostic methods."
+                })
+            
+            # 3. Credential Leakage in URL
+            if any(key in url for key in ['api_key=', 'apikey=', 'secret=', 'password=', 'passwd=']):
+                 findings.append({
+                    "id": "CREDENTIAL_LEAK_URL",
+                    "severity": "high",
+                    "title": "Credential Leakage in URL",
+                    "description": "Sensitive tokens or credentials observed in plaintext URL parameters."
                 })
                 
         return findings

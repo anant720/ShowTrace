@@ -43,6 +43,19 @@ class EnsembleScorer:
         """
         Enterprise-grade risk calculation with tiered ensemble inference.
         """
+        # 1. Adaptive Weighting based on Target Sector
+        active_weights = self.weights.copy()
+        
+        # If site is a high-value sector target (Bank/Work), increase Semantic & Behavioral weight
+        criticality = features.get("target_sector_criticality", 0.0)
+        if criticality > 0.8:
+            active_weights["L3"] += 0.15 # Semantic (Brand Deception)
+            active_weights["L2"] += 0.05 # Behavioral
+            active_weights["L1"] -= 0.20 # Phishers hide lexical signals well
+        elif criticality > 0.4:
+            active_weights["L3"] += 0.05
+            active_weights["L1"] -= 0.05
+
         # --- Layer Predictions (0-1.0 Scale) ---
         l1_raw = self._predict_l1(features)
         l2_raw = self._predict_l2(features)
@@ -52,20 +65,36 @@ class EnsembleScorer:
         scores = {"L1": l1_raw * 100, "L2": l2_raw * 100, "L3": l3_raw * 100, "L4": l4_raw * 100}
         
         # Weighted Stacking
-        weighted_avg = sum((scores[layer] / 100) * self.weights[layer] for layer in scores)
+        weighted_avg = sum((scores[layer] / 100) * active_weights[layer] for layer in scores)
+        
+        # 2. Advanced Threat Multipliers (Exponential)
+        threat_count = 0
+        if features.get("has_keylogger"): threat_count += 2 
+        if features.get("brand_similarity", 0) > 0.7: threat_count += 1
+        if features.get("obfuscation_score", 0) > 50: threat_count += 1
+        if features.get("has_homograph"): threat_count += 1
+        if features.get("cross_origin_form_actions"): threat_count += 1
+        
+        # Sector Multiplier: Targeted attacks on sensitive sectors are higher risk
+        sector_multiplier = 1.0 + (criticality * 0.4)
+        behavior_multiplier = 1.0 + (threat_count * 0.3)
+        
+        # Complexity Multiplier (Phishing kits are often very heavy/complex)
+        complexity_multiplier = 1.1 if features.get("dom_node_count", 0) > 3000 else 1.0
+        
+        total_multiplier = sector_multiplier * behavior_multiplier * complexity_multiplier
+        
+        # Final Score Calculation
+        base_risk = 0.0
+        if not features.get("is_https"): base_risk += 10.0
+        if features.get("is_ip"): base_risk += 15.0
+        
+        final_score = min(100.0, (weighted_avg * 100 * total_multiplier) + base_risk)
         
         # Agreement-based Confidence
         core_vals = [l1_raw, l2_raw, l3_raw]
         std_dev = statistics.stdev(core_vals) if len(core_vals) > 1 else 0
-        confidence = max(0.5, 1.0 - (std_dev * 1.5))
-        
-        # Behavioral Risk Multipliers
-        multiplier = 1.0
-        if features.get("has_keylogger"): multiplier *= 1.4
-        if features.get("brand_similarity", 0) > 0.8: multiplier *= 1.3
-        if features.get("obfuscation_score", 0) > 30: multiplier *= 1.2
-        
-        final_score = min(100.0, (weighted_avg * multiplier) * 100)
+        confidence = max(0.40, 1.0 - (std_dev * 2.0))
         
         return {
             "risk_score": round(final_score, 1),
@@ -74,24 +103,23 @@ class EnsembleScorer:
             "layer_scores": {k: round(v, 1) for k, v in scores.items()},
             "reasons": self._generate_ml_reasoning(scores, features),
             "explainability": {
-                "top_indicators": sorted(features.items(), key=lambda x: abs(x[1]), reverse=True)[:3],
-                "behavioral_boost": round((multiplier - 1.0) * 100, 1)
+                "top_indicators": sorted(features.items(), key=lambda x: abs(x[1]), reverse=True)[:4],
+                "threat_density": threat_count,
+                "criticality_index": criticality
             }
         }
 
     def _predict_l1(self, f: Dict[str, float]) -> float:
         """Trained XGBoost inference for Lexical signals."""
         if not self.l1_model:
-            # Heuristic fallback (simplified)
             score = 0
-            if f.get("shannon_entropy", 0) > 4.2: score += 40
-            if f.get("has_homograph"): score += 80
+            if f.get("shannon_entropy", 0) > 4.8: score += 45
+            if f.get("digit_ratio", 0) > 0.4: score += 35
+            if f.get("has_homograph"): score += 95
+            if f.get("subdomain_depth", 0) > 3: score += 25
             return min(score / 100, 1.0)
         
-        # Predict probability
         try:
-            # Prepare feature vector in correct order (matching training)
-            # For simplicity, we assume order matches. In production, we use a fixed schema.
             ordered_feats = [f.get(k, 0) for k in sorted(f.keys()) if k != 'label']
             X = np.array([ordered_feats])
             return float(self.l1_model.predict_proba(X)[0][1])
@@ -101,50 +129,71 @@ class EnsembleScorer:
     def _predict_l2(self, f: Dict[str, float]) -> float:
         """Behavioral Density signal."""
         score = 0
-        if f.get("obfuscation_score", 0) > 20: score += 60
-        if f.get("event_listener_density", 0) > 5: score += 40
+        obf = f.get("obfuscation_score", 0)
+        if obf > 60: score += 90
+        elif obf > 25: score += 45
+        
+        density = f.get("event_listener_density", 0)
+        if density > 10: score += 65
+        if f.get("has_hidden_inputs"): score += 30
         return min(score / 100, 1.0)
 
     def _predict_l3(self, f: Dict[str, float]) -> float:
         """Semantic/Intent signal."""
         score = 0
-        if f.get("has_login"): score += 40
-        if f.get("has_keylogger"): score += 70
+        similarity = f.get("brand_similarity", 0)
+        criticality = f.get("target_sector_criticality", 0)
+        
+        if similarity > 0.8:
+            score += 95 if criticality > 0.6 else 75
+        elif similarity > 0.4:
+            score += 55
+            
+        if f.get("has_login") and similarity > 0.2: score += 45
+        if f.get("cross_origin_form_actions"): score += 65
+        if f.get("has_keylogger"): score += 95
         return min(score / 100, 1.0)
 
     def _predict_l4(self, f: Dict[str, float]) -> float:
         """Isolation Forest Anomaly score."""
         if not self.l4_model:
-            return f.get("external_exfiltration_ratio", 0)
+            ratio = f.get("external_exfiltration_ratio", 0)
+            return min(ratio * 2.2, 1.0)
         
         try:
             ordered_feats = [f.get(k, 0) for k in sorted(f.keys()) if k != 'label']
             X = np.array([ordered_feats])
-            # Isolation Forest returns -1 for anomaly, 1 for normal
-            # Scale to 0 (normal) to 1 (highly anomalous)
             decision = self.l4_model.decision_function(X)[0]
             return float(1.0 - (decision + 1.0) / 2.0)
         except:
             return 0.2
 
     def _map_risk_level(self, score: float) -> str:
-        if score > 75: return "Dangerous"
-        if score > 40: return "Suspicious"
+        if score >= 65: return "Dangerous"
+        if score >= 30: return "Suspicious"
         return "Safe"
 
     def _generate_ml_reasoning(self, scores: Dict[str, float], features: Dict[str, float]) -> List[str]:
         reasons = []
-        if features.get("brand_similarity", 0) > 0.8:
-            reasons.append("Brand Deception: High similarity to a known sensitive brand detected.")
-        if features.get("has_homograph"):
-            reasons.append("Adversarial: Unicode homograph (look-alike) domain discovered.")
+        similarity = features.get("brand_similarity", 0)
+        criticality = features.get("target_sector_criticality", 0)
+        
+        if similarity > 0.7:
+            vuln_type = "Targeted Phishing" if criticality > 0.8 else "Brand Impersonation"
+            reasons.append(f"{vuln_type}: Site precisely mirrors protected work/finance assets ({round(similarity*100)}% match).")
+        
         if features.get("has_keylogger"):
-            reasons.append("Infiltration: Active credential field monitoring (Keylogger) signaled.")
-        if scores["L1"] > 70:
-            reasons.append("ML Engine: Trained lexical model flagged adversarial URL construction.")
-        if scores["L4"] > 70:
-            reasons.append("Anomaly Engine: Observed behavior deviates significantly from safe baseline.")
+            reasons.append("Credential Interception: Active DOM hooks monitoring sensitive input streams for exfiltration.")
+        
+        if features.get("cross_origin_form_actions"):
+            reasons.append("Data Diversion: Form submissions routed to unauthorized external infrastructure.")
+            
+        if features.get("shannon_entropy", 0) > 4.7:
+            reasons.append("Structural Anomaly: Cryptographic host-string signature detected (high tunnel/DGA risk).")
+            
+        if scores["L2"] > 80:
+            reasons.append("Anti-Analysis: Sophisticated JS obfuscation layer active to prevent forensic inspection.")
         
         if not reasons:
-            reasons.append("Heuristic Audit: Standard operational patterns detected.")
+            reasons.append("Heuristic Baseline: Page behavior is consistent with standard enterprise operational standards.")
         return reasons

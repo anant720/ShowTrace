@@ -14,6 +14,7 @@ export default function AnalyticsPage() {
     const [engines, setEngines] = useState({});
     const [recentScans, setRecentScans] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [summary, setSummary] = useState({});
     const [selectedDomain, setSelectedDomain] = useState('');
     const [domainPosture, setDomainPosture] = useState(null);
     const [fetchingPosture, setFetchingPosture] = useState(false);
@@ -21,17 +22,19 @@ export default function AnalyticsPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [trendData, tldData, engineData, recentData] = await Promise.all([
+                const [trendData, tldData, engineData, recentData, summaryData] = await Promise.all([
                     apiRequest('/analytics/trends?days=30'),
                     apiRequest('/analytics/tld-distribution'),
                     apiRequest('/analytics/engine-breakdown'),
-                    apiRequest('/analytics/recent-scans?limit=5')
+                    apiRequest('/analytics/recent-scans?limit=5'),
+                    apiRequest('/analytics/summary')
                 ]);
                 setTrends(trendData.trends);
                 setTlds(tldData.tlds);
                 setEngines(engineData.engines);
                 const recent = recentData.scans || [];
                 setRecentScans(recent);
+                setSummary(summaryData);
                 if (recent.length > 0 && !selectedDomain) {
                     setSelectedDomain(recent[0].domain);
                 }
@@ -45,22 +48,30 @@ export default function AnalyticsPage() {
     }, []);
 
     useEffect(() => {
-        if (!selectedDomain) return;
-
-        const fetchPosture = async () => {
+        const fetchDomainDetails = async () => {
             setFetchingPosture(true);
             try {
-                const data = await apiRequest(`/analytics/domain-posture/${selectedDomain}`);
-                if (data.status !== 'no_data') {
-                    setDomainPosture(data);
-                }
+                const query = selectedDomain ? `?domain=${selectedDomain}` : '';
+                const [postureData, trendData, engineData, summaryData] = await Promise.all([
+                    selectedDomain ? apiRequest(`/analytics/domain-posture/${selectedDomain}`) : Promise.resolve(null),
+                    apiRequest(`/analytics/trends${query}`),
+                    apiRequest(`/analytics/engine-breakdown${query}`),
+                    apiRequest(`/analytics/summary${query}`)
+                ]);
+
+                if (postureData && postureData.status !== 'no_data') setDomainPosture(postureData);
+                else if (!selectedDomain) setDomainPosture(null);
+
+                setTrends(trendData.trends);
+                setEngines(engineData.engines);
+                setSummary(summaryData);
             } catch (err) {
-                console.error('Failed to fetch domain posture:', err);
+                console.error('Failed to fetch detailed analytics:', err);
             } finally {
                 setFetchingPosture(false);
             }
         };
-        fetchPosture();
+        fetchDomainDetails();
     }, [selectedDomain]);
 
     if (loading) return (
@@ -99,6 +110,7 @@ export default function AnalyticsPage() {
                             cursor: 'pointer'
                         }}
                     >
+                        <option value="">Global Perspective</option>
                         {recentScans.map(scan => (
                             <option key={scan.id || scan.domain} value={scan.domain}>{scan.domain}</option>
                         ))}
@@ -142,16 +154,18 @@ export default function AnalyticsPage() {
                         <div style={{ flex: 1 }}>
                             <div style={{ marginBottom: '24px' }}>
                                 <p style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>AUDIT TARGET</p>
-                                <p style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{displayData.domain || 'N/A'}</p>
+                                <p style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{selectedDomain || 'System-Wide'}</p>
                             </div>
                             <div style={{ display: 'flex', gap: '32px' }}>
                                 <div>
-                                    <p style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>FINDINGS</p>
-                                    <p style={{ fontSize: '20px', fontWeight: '800', color: findings.length > 0 ? 'var(--secondary)' : 'var(--text-main)' }}>{findings.length}</p>
+                                    <p style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>SCANS</p>
+                                    <p style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-main)' }}>{summary.total_scans || 0}</p>
                                 </div>
                                 <div>
-                                    <p style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>SLA COMPLIANCE</p>
-                                    <p style={{ fontSize: '20px', fontWeight: '800', color: 'var(--primary)' }}>99.9%</p>
+                                    <p style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>RISK RATIO</p>
+                                    <p style={{ fontSize: '20px', fontWeight: '800', color: (summary.risk_distribution?.Dangerous || 0) > 0 ? 'var(--secondary)' : 'var(--primary)' }}>
+                                        {summary.total_scans ? Math.round(((summary.risk_distribution?.Dangerous || 0) / summary.total_scans) * 100) : 0}%
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -258,7 +272,8 @@ export default function AnalyticsPage() {
                         { id: 'L3', name: 'Semantic NLP', desc: 'Intent & Phishing Content', color: '#6366f1' },
                         { id: 'L4', name: 'Anomaly (IsoForest)', desc: 'Novel Attack Detection', color: '#ec4899' }
                     ].map((layer) => {
-                        const score = displayData?.engine_scores?.[layer.id] || 85;
+                        const scoreData = engines[layer.id];
+                        const score = scoreData ? scoreData.avg_score : (displayData?.engine_scores?.[layer.id] || 85);
                         return (
                             <div key={layer.id} style={{ background: 'var(--bg-main)', padding: '24px', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.03)', position: 'relative' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>

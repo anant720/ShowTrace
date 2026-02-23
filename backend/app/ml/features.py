@@ -10,12 +10,13 @@ class FeatureEngineer:
     Implements a 5-dimension signal matrix for high-fidelity threat detection.
     """
 
-    # High-risk brands for homograph/similarity detection
-    SENSITIVE_BRANDS = [
-        "google", "microsoft", "paypal", "apple", "facebook", "amazon", "netflix",
-        "chase", "wells Fargo", "bankofamerica", "binance", "coinbase", "outlook",
-        "github", "dropbox", "adobe", "roblox", "steam", "walmart", "target"
-    ]
+    # High-risk sector targets for context-aware scoring
+    SENSITIVE_SECTORS = {
+        "finance": ["chase", "wells fargo", "bankofamerica", "paypal", "binance", "coinbase", "stripe"],
+        "productivity": ["google", "microsoft", "outlook", "office", "github", "dropbox", "dropbox"],
+        "commerce": ["amazon", "walmart", "target", "ebay", "shopify"],
+        "social": ["facebook", "instagram", "twitter", "linkedin", "tiktok", "snapchat"]
+    }
 
     @staticmethod
     def extract_all(payload: Dict[str, Any]) -> Dict[str, float]:
@@ -28,6 +29,8 @@ class FeatureEngineer:
         network_reqs = payload.get("network_requests", [])
         
         full_url = payload.get("full_url", "")
+        parsed_url = urlparse(full_url)
+        hostname = parsed_url.netloc
         
         features = {}
         
@@ -35,18 +38,27 @@ class FeatureEngineer:
         features.update(FeatureEngineer.lexical_features(full_url, domain_sigs))
         
         # --- Layer 2: Brand/Deception Metrics ---
-        features["brand_similarity"] = FeatureEngineer.calculate_brand_similarity(urlparse(full_url).netloc)
+        brand_sim, sector = FeatureEngineer.calculate_brand_and_sector(hostname)
+        features["brand_similarity"] = brand_sim
+        features["target_sector_criticality"] = 1.0 if sector in ["finance", "productivity"] else 0.5 if sector else 0.0
         
         # --- Layer 3: Behavioral & JS Anomaly ---
         features["eval_count"] = float(ml_behavior.get("evalCount", 0))
         features["large_hex_count"] = float(ml_behavior.get("largeHexCount", 0))
         features["event_listener_density"] = float(interaction.get("suspiciousHandlerCount", 0))
+        
+        # Structural Complexity Indicator (Sign of complex phishing kits)
+        features["dom_node_count"] = float(payload.get("meta", {}).get("domNodeCount", 1000)) 
         features["obfuscation_score"] = (features["eval_count"] * 15) + (features["large_hex_count"] * 8)
         
         # --- Layer 4: Forensic Indicators ---
         features["has_keylogger"] = 1.0 if interaction.get("hasGlobalKeylogger") else 0.0
         features["has_login"] = 1.0 if forms.get("hasLoginForm") else 0.0
+        features["has_hidden_inputs"] = 1.0 if forms.get("stats", {}).get("hiddenFieldCount", 0) > 5 else 0.0
+        
+        # Advanced Network depth
         features["external_exfiltration_ratio"] = FeatureEngineer.calculate_exfiltration_ratio(full_url, network_reqs)
+        features["cross_origin_form_actions"] = 1.0 if forms.get("stats", {}).get("crossDomainActions", 0) > 0 else 0.0
         
         return features
 
@@ -77,22 +89,26 @@ class FeatureEngineer:
         }
 
     @staticmethod
-    def calculate_brand_similarity(hostname: str) -> float:
-        """Detects if a domain is 'shadowing' a major brand."""
-        if not hostname: return 0.0
+    def calculate_brand_and_sector(hostname: str) -> (float, str):
+        """Detects if a domain is 'shadowing' a major brand and identifies the target sector."""
+        if not hostname: return 0.0, None
         base_host = hostname.split('.')[-2] if len(hostname.split('.')) >= 2 else hostname
+        base_host = base_host.lower()
         
         scores = []
-        for brand in FeatureEngineer.SENSITIVE_BRANDS:
-            # 0 means exact match (safe if whitelisted), small number means typo/homograph
-            dist = Levenshtein.distance(base_host.lower(), brand)
-            if dist == 0: continue # Exact match is handled by separate whitelist
-            
-            # If distance is small relative to name length, it's suspicious
-            if dist <= 2:
-                scores.append(1.0 - (dist / len(brand)))
+        found_sector = None
         
-        return max(scores) if scores else 0.0
+        for sector, brands in FeatureEngineer.SENSITIVE_SECTORS.items():
+            for brand in brands:
+                dist = Levenshtein.distance(base_host, brand)
+                if dist == 0: continue # Whitelisted usually
+                
+                if dist <= 2:
+                    score = 1.0 - (dist / len(brand))
+                    scores.append(score)
+                    if score > 0.6: found_sector = sector
+        
+        return (max(scores) if scores else 0.0), found_sector
 
     @staticmethod
     def calculate_exfiltration_ratio(base_url: str, requests: List[Dict]) -> float:
