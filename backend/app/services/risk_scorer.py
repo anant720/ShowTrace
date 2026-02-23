@@ -19,6 +19,7 @@ def classify_risk(score: float) -> str:
     return "Dangerous"
 
 async def evaluate(request: AnalyzeRequest, db: AsyncIOMotorDatabase) -> AnalyzeResponse:
+    now = datetime.now(timezone.utc)
     try:
         # 0. Normalization
         original_url = request.fullURL or request.domain.fullURL
