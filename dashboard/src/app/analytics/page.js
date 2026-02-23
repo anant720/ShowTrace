@@ -50,15 +50,15 @@ export default function AnalyticsPage() {
     return (
         <DashboardLayout>
             <div style={{ padding: '20px 0 60px 0' }}>
-                <h1 style={{ fontSize: '72px', fontWeight: '800', letterSpacing: '-4px', lineHeight: 1, color: 'var(--text-main)', marginBottom: '16px' }}>
+                <h1 style={{ fontSize: 'var(--hero-font-size)', fontWeight: '800', letterSpacing: '-4px', lineHeight: 1, color: 'var(--text-main)', marginBottom: '16px', transition: 'font-size 0.3s ease' }}>
                     Security Analytics
                 </h1>
-                <p style={{ fontSize: '20px', color: 'var(--text-muted)', maxWidth: '600px', fontWeight: '500' }}>
+                <p style={{ fontSize: 'clamp(16px, 2vw, 20px)', color: 'var(--text-muted)', maxWidth: '600px', fontWeight: '500' }}>
                     Deep dive into threat vectors and defensive security posture across the enterprise.
                 </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '48px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--grid-gap)', marginBottom: '48px' }}>
                 {/* Security Posture Card */}
                 <div className="st-card" style={{ padding: '40px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
@@ -130,7 +130,7 @@ export default function AnalyticsPage() {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '32px', marginBottom: '48px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--grid-gap)', marginBottom: '48px' }}>
                 {/* Vulnerability Findings Table */}
                 <div className="st-card" style={{ padding: '40px' }}>
                     <h3 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px', marginBottom: '32px' }}>Passive Vulnerability Findings</h3>
@@ -202,7 +202,7 @@ export default function AnalyticsPage() {
                         <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.05)', padding: '4px 12px', borderRadius: '100px' }}>V5.0 ENTERPRISE</span>
                     </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--grid-gap)' }}>
                     {[
                         { id: 'L1', name: 'Lexical (XGBoost)', desc: 'Trained URL Signal Matrix', color: 'var(--primary)' },
                         { id: 'L2', name: 'Behavioral Engine', desc: 'DOM Traps & JS Hooks', color: 'var(--secondary)' },

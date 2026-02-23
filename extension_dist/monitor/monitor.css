@@ -527,3 +527,90 @@ tr.selected td {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--m-text-muted);
 }
+
+/* ── Responsive Media Queries ─────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+    .m-inspector.open {
+        width: 400px;
+    }
+}
+
+@media (max-width: 768px) {
+    .m-header {
+        height: auto;
+        padding: 16px;
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .m-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .m-main {
+        flex-direction: column;
+        padding: 12px;
+        overflow-y: auto;
+    }
+
+    .m-table-container {
+        height: 60vh;
+        flex: none;
+    }
+
+    .m-inspector {
+        transition: height 0.3s ease;
+        width: 100% !important;
+        height: 0;
+    }
+
+    .m-inspector.open {
+        height: 80vh;
+        width: 100% !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        z-index: 100;
+        border-radius: 20px 20px 0 0;
+    }
+
+    /* Hide non-essential columns on mobile */
+    th:nth-child(1),
+    td:nth-child(1),
+    /* Time */
+    th:nth-child(3),
+    td:nth-child(3)
+
+    /* Type */
+        {
+        display: none;
+    }
+
+    th,
+    td {
+        padding: 12px;
+    }
+
+    .m-footer {
+        padding: 0 16px;
+    }
+
+    .m-brand {
+        display: none;
+        /* Privacy/Density */
+    }
+}
+
+@media (max-width: 480px) {
+    .m-logo img {
+        width: 24px;
+        height: 24px;
+    }
+
+    .m-title-group h1 {
+        font-size: 16px;
+    }
+}

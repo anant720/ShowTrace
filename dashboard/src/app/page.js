@@ -116,13 +116,13 @@ export default function OverviewPage() {
         flexDirection: 'column',
         gap: '8px'
       }}>
-        <h1 style={{ fontSize: '72px', fontWeight: '800', letterSpacing: '-4px', lineHeight: 1, color: 'var(--text-main)' }}>
+        <h1 style={{ fontSize: 'var(--hero-font-size)', fontWeight: '800', letterSpacing: '-4px', lineHeight: 1, color: 'var(--text-main)', transition: 'font-size 0.3s ease' }}>
           Security Intelligence
         </h1>
-        <p style={{ fontSize: '20px', color: 'var(--text-muted)', maxWidth: '600px', fontWeight: '500' }}>
+        <p style={{ fontSize: 'clamp(16px, 2vw, 20px)', color: 'var(--text-muted)', maxWidth: '600px', fontWeight: '500' }}>
           Real-time analysis of {summary?.total_scans?.toLocaleString()} signals. System state is currently stable.
         </p>
-        <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
+        <div style={{ display: 'flex', gap: '16px', marginTop: '32px', flexWrap: 'wrap' }}>
           <button
             onClick={() => router.push('/audit')}
             style={{ background: 'var(--primary)', color: 'white', padding: '16px 36px', borderRadius: '20px', fontSize: '15px', boxShadow: '0 10px 20px rgba(0, 184, 148, 0.3)', cursor: 'pointer', border: 'none', fontWeight: '700' }}
@@ -139,7 +139,7 @@ export default function OverviewPage() {
       </section>
 
       {/* Stats Grid */}
-      <div style={{ display: 'flex', gap: '32px', marginBottom: '48px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--grid-gap)', marginBottom: '48px' }}>
         <StatWidget
           label="Total Interceptions"
           value={summary?.total_scans?.toLocaleString()}
@@ -157,7 +157,7 @@ export default function OverviewPage() {
         />
       </div>
 
-      <div style={{ display: 'flex', gap: '32px', marginBottom: '48px', height: '540px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--grid-gap)', marginBottom: '48px', minHeight: '540px' }}>
         <div className="st-card" style={{ flex: 2, display: 'flex', flexDirection: 'column', padding: '40px', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
             <h3 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>Signal Trends</h3>

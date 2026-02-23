@@ -46,15 +46,15 @@ export default function ReportsPage() {
     return (
         <DashboardLayout>
             <div style={{ padding: '20px 0 60px 0' }}>
-                <h1 style={{ fontSize: '72px', fontWeight: '800', letterSpacing: '-4px', lineHeight: 1, color: 'var(--text-main)', marginBottom: '16px' }}>
+                <h1 style={{ fontSize: 'var(--hero-font-size)', fontWeight: '800', letterSpacing: '-4px', lineHeight: 1, color: 'var(--text-main)', marginBottom: '16px', transition: 'font-size 0.3s ease' }}>
                     Community Intelligence
                 </h1>
-                <p style={{ fontSize: '20px', color: 'var(--text-muted)', maxWidth: '600px', fontWeight: '500' }}>
+                <p style={{ fontSize: 'clamp(16px, 2vw, 20px)', color: 'var(--text-muted)', maxWidth: '600px', fontWeight: '500' }}>
                     User submitted reports and manual review signals integrated with our global threat engine.
                 </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '48px', alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--grid-gap)', alignItems: 'start' }}>
                 <div className="st-card" style={{ padding: '48px' }}>
                     <h3 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', marginBottom: '32px', letterSpacing: '-0.5px' }}>Submit Intel</h3>
 

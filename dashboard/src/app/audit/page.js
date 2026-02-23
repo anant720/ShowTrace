@@ -46,10 +46,10 @@ export default function AuditPage() {
     return (
         <DashboardLayout>
             <div style={{ padding: '20px 0 60px 0' }}>
-                <h1 style={{ fontSize: '72px', fontWeight: '800', letterSpacing: '-4px', lineHeight: 1, color: 'var(--text-main)', marginBottom: '16px' }}>
+                <h1 style={{ fontSize: 'var(--hero-font-size)', fontWeight: '800', letterSpacing: '-4px', lineHeight: 1, color: 'var(--text-main)', marginBottom: '16px', transition: 'font-size 0.3s ease' }}>
                     Security Audit
                 </h1>
-                <p style={{ fontSize: '20px', color: 'var(--text-muted)', maxWidth: '600px', fontWeight: '500' }}>
+                <p style={{ fontSize: 'clamp(16px, 2vw, 20px)', color: 'var(--text-muted)', maxWidth: '600px', fontWeight: '500' }}>
                     A high-density record of every signal processed by the ShadowTrace neural engine.
                 </p>
             </div>
@@ -126,15 +126,15 @@ export default function AuditPage() {
             {selectedScan && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
                     <div className="st-card" style={{ width: '100%', maxWidth: '900px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-                        <div style={{ padding: '32px', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ padding: 'clamp(16px, 4vw, 32px)', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                             <div>
-                                <h2 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>Forensic Report: {selectedScan.domain}</h2>
-                                <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600', fontFamily: 'monospace' }}>ID: {selectedScan._id} | {formatForensicTime(selectedScan.timestamp)}</p>
+                                <h2 style={{ fontSize: 'clamp(18px, 3vw, 24px)', fontWeight: '800', letterSpacing: '-0.5px' }}>Forensic Report: {selectedScan.domain}</h2>
+                                <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600', fontFamily: 'monospace', wordBreak: 'break-all' }}>ID: {selectedScan._id} | {formatForensicTime(selectedScan.timestamp)}</p>
                             </div>
                             <button onClick={() => setSelectedScan(null)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: 'var(--text-muted)' }}>&times;</button>
                         </div>
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '32px' }}>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: 'clamp(16px, 4vw, 32px)' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '24px', marginBottom: '32px' }}>
                                 <div style={{ background: 'var(--bg-main)', padding: '20px', borderRadius: '16px' }}>
                                     <p style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Consensus Risk</p>
                                     <h4 style={{ fontSize: '24px', fontWeight: '800', color: getRiskColor(selectedScan.risk_level) }}>{selectedScan.final_risk_score}</h4>

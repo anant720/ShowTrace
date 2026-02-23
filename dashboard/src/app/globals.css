@@ -30,6 +30,32 @@
   --sidebar-width: 100px;
   --topbar-height: 100px;
   --padding-page: 48px;
+  --grid-gap: 32px;
+  --hero-font-size: 72px;
+}
+
+@media (max-width: 1280px) {
+  :root {
+    --padding-page: 32px;
+    --grid-gap: 24px;
+    --hero-font-size: 60px;
+  }
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 0px;
+    --padding-page: 24px;
+    --hero-font-size: 48px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --padding-page: 16px;
+    --grid-gap: 16px;
+    --hero-font-size: 36px;
+  }
 }
 
 * {
