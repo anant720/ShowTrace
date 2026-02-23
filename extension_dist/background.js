@@ -111,6 +111,15 @@ chrome.webRequest.onHeadersReceived.addListener(
         if (req) {
             req.responseHeaders = details.responseHeaders || [];
             req.statusCode = details.statusCode;
+            // Capture Server IP if available
+            if (details.ip) req.ip = details.ip;
+
+            // Extract destination port from URL or protocol
+            try {
+                const url = new URL(details.url);
+                req.destPort = url.port || (url.protocol === 'https:' ? '443' : '80');
+            } catch (e) { req.destPort = 'Unknown'; }
+
             await saveToBuffer(details.requestId, req);
         }
     },

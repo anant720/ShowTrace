@@ -256,6 +256,8 @@
 
             <div class="m-section-title">Forensic Metadata</div>
             <div class="m-header-list">
+                <div class="m-header-item"><span class="m-header-name">Remote Address:</span> <span class="m-header-value" style="color: #f59e0b; font-family: 'JetBrains Mono';">${req.ip || 'Inferred via Proxy/Tunnel'}</span></div>
+                <div class="m-header-item"><span class="m-header-name">Destination Port:</span> <span class="m-header-value" style="color: #f59e0b;">${req.destPort || (req.url.startsWith('https') ? '443' : '80')}</span></div>
                 <div class="m-header-item"><span class="m-header-name">Type:</span> <span class="m-header-value">${req.type}</span></div>
                 <div class="m-header-item"><span class="m-header-name">Timestamp:</span> <span class="m-header-value">${new Date(req.timestamp).toISOString()}</span></div>
                 <div class="m-header-item"><span class="m-header-name">Request ID:</span> <span class="m-header-value">${String(req.id)}</span></div>
