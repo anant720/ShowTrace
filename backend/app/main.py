@@ -319,9 +319,10 @@ app.include_router(report.router)
 app.include_router(stats.router)
 
 # Phase 3 routers
-from app.routers import auth, analytics
+from app.routers import auth, analytics, feedback
 app.include_router(auth.router)
 app.include_router(analytics.router)
+app.include_router(feedback.router)
 
 
 @app.get("/health", tags=["System"])

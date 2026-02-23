@@ -223,6 +223,8 @@ async function sendToBackend(payload, retry = 0) {
             risk_score: data.risk_score,
             risk_level: levelMap[data.risk_level] || 'low',
             reasons: data.reasons || [],
+            security_score: data.security_score,
+            security_findings: data.security_findings || [],
             source: 'backend'
         };
     } catch (err) {

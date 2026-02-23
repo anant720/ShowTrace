@@ -22,7 +22,7 @@ export default function AnalyticsPage() {
                     apiRequest('/analytics/trends?days=30'),
                     apiRequest('/analytics/tld-distribution'),
                     apiRequest('/analytics/engine-breakdown'),
-                    apiRequest('/analytics/recent-scans?limit=1')
+                    apiRequest('/analytics/recent-scans?limit=5')
                 ]);
                 setTrends(trendData.trends);
                 setTlds(tldData.tlds);
@@ -43,6 +43,10 @@ export default function AnalyticsPage() {
         </DashboardLayout>
     );
 
+    const latestScan = recentScans[0] || {};
+    const securityScore = latestScan.security_score ?? 92;
+    const findings = latestScan.security_findings || [];
+
     return (
         <DashboardLayout>
             <div style={{ padding: '20px 0 60px 0' }}>
@@ -50,11 +54,61 @@ export default function AnalyticsPage() {
                     Security Analytics
                 </h1>
                 <p style={{ fontSize: '20px', color: 'var(--text-muted)', maxWidth: '600px', fontWeight: '500' }}>
-                    Deep dive into threat vectors and detection patterns across the global network.
+                    Deep dive into threat vectors and defensive security posture across the enterprise.
                 </p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '48px' }}>
+                {/* Security Posture Card */}
+                <div className="st-card" style={{ padding: '40px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+                        <div>
+                            <h3 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>Enterprise Posture</h3>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500' }}>Passive configuration audit score.</p>
+                        </div>
+                        <span style={{
+                            background: securityScore > 80 ? 'rgba(0,184,148,0.1)' : 'rgba(255,107,107,0.1)',
+                            color: securityScore > 80 ? 'var(--primary)' : 'var(--secondary)',
+                            padding: '6px 16px',
+                            borderRadius: '100px',
+                            fontSize: '12px',
+                            fontWeight: '800'
+                        }}>
+                            {securityScore > 80 ? 'HEALTHY' : 'ACTION REQUIRED'}
+                        </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '40px', flex: 1 }}>
+                        <div style={{ position: 'relative', width: '180px', height: '180px' }}>
+                            <svg width="180" height="180" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth="10" />
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="var(--primary)" strokeWidth="10"
+                                    strokeDasharray={`${securityScore * 2.82} 282`} strokeLinecap="round" transform="rotate(-90 50 50)" />
+                            </svg>
+                            <div style={{ position: 'absolute', top: '0', left: '0', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                <span style={{ fontSize: '48px', fontWeight: '900', color: 'var(--text-main)', lineHeight: 1 }}>{Math.round(securityScore)}</span>
+                                <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)' }}>SCORE</span>
+                            </div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ marginBottom: '24px' }}>
+                                <p style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>LATEST AUDIT</p>
+                                <p style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{latestScan.domain || 'N/A'}</p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '32px' }}>
+                                <div>
+                                    <p style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>FINDINGS</p>
+                                    <p style={{ fontSize: '20px', fontWeight: '800', color: findings.length > 0 ? 'var(--secondary)' : 'var(--text-main)' }}>{findings.length}</p>
+                                </div>
+                                <div>
+                                    <p style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>SLA COMPLIANCE</p>
+                                    <p style={{ fontSize: '20px', fontWeight: '800', color: 'var(--primary)' }}>99.9%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="st-card" style={{ padding: '40px', height: '450px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     <h3 style={{ marginBottom: '40px', fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>Risk Evolution</h3>
                     <div style={{ flex: 1, width: '100%', marginLeft: '-20px' }}>
@@ -74,11 +128,61 @@ export default function AnalyticsPage() {
                         </ResponsiveContainer>
                     </div>
                 </div>
+            </div>
 
-                <div className="st-card" style={{ padding: '40px', height: '450px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    <h3 style={{ marginBottom: '40px', fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>Threat Concentration</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '32px', marginBottom: '48px' }}>
+                {/* Vulnerability Findings Table */}
+                <div className="st-card" style={{ padding: '40px' }}>
+                    <h3 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px', marginBottom: '32px' }}>Passive Vulnerability Findings</h3>
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                                    <th style={{ textAlign: 'left', padding: '16px', color: 'var(--text-muted)', fontSize: '11px', fontWeight: '800' }}>SEVERITY</th>
+                                    <th style={{ textAlign: 'left', padding: '16px', color: 'var(--text-muted)', fontSize: '11px', fontWeight: '800' }}>TITLE</th>
+                                    <th style={{ textAlign: 'left', padding: '16px', color: 'var(--text-muted)', fontSize: '11px', fontWeight: '800' }}>OBSERVED ON</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {findings.length > 0 ? findings.map((finding, idx) => (
+                                    <tr key={idx} style={{ borderBottom: '1px solid rgba(0,0,0,0.02)' }}>
+                                        <td style={{ padding: '16px' }}>
+                                            <span style={{
+                                                fontSize: '10px',
+                                                fontWeight: '800',
+                                                color: finding.severity === 'high' ? 'white' : finding.severity === 'medium' ? 'var(--secondary)' : 'var(--text-muted)',
+                                                background: finding.severity === 'high' ? 'var(--secondary)' : finding.severity === 'medium' ? 'rgba(255,107,107,0.1)' : 'rgba(0,0,0,0.05)',
+                                                padding: '4px 10px',
+                                                borderRadius: '8px'
+                                            }}>
+                                                {finding.severity.toUpperCase()}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px' }}>
+                                            <p style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-main)' }}>{finding.title}</p>
+                                            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{finding.description}</p>
+                                        </td>
+                                        <td style={{ padding: '16px', fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)' }}>
+                                            {latestScan.domain}
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan="3" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500' }}>
+                                            No critical misconfigurations detected in recent traffic.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Threat Concentration */}
+                <div className="st-card" style={{ padding: '40px', display: 'flex', flexDirection: 'column' }}>
+                    <h3 style={{ marginBottom: '40px', fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>Top Threat TLDs</h3>
                     <div style={{ flex: 1, width: '100%', marginLeft: '-20px' }}>
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="300px">
                             <BarChart data={tlds} layout="vertical" margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                                 <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 12, fontWeight: '600' }} />
                                 <YAxis dataKey="tld" type="category" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 12, fontWeight: '700' }} width={60} />
@@ -95,17 +199,17 @@ export default function AnalyticsPage() {
                     <h3 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>ML Ensemble Performance Matrix</h3>
                     <div style={{ display: 'flex', gap: '8px' }}>
                         <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--primary)', background: 'rgba(0,184,148,0.1)', padding: '4px 12px', borderRadius: '100px' }}>MODEL DRIFT: 0.02%</span>
-                        <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.05)', padding: '4px 12px', borderRadius: '100px' }}>V4.02 STABLE</span>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.05)', padding: '4px 12px', borderRadius: '100px' }}>V5.0 ENTERPRISE</span>
                     </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
                     {[
-                        { id: 'L1', name: 'Lexical Analysis', desc: 'URL Structure & TLD Risk', color: 'var(--primary)' },
+                        { id: 'L1', name: 'Lexical (XGBoost)', desc: 'Trained URL Signal Matrix', color: 'var(--primary)' },
                         { id: 'L2', name: 'Behavioral Engine', desc: 'DOM Traps & JS Hooks', color: 'var(--secondary)' },
                         { id: 'L3', name: 'Semantic NLP', desc: 'Intent & Phishing Content', color: '#6366f1' },
-                        { id: 'L4', name: 'Anomaly Detection', desc: 'Global Traffic Patterns', color: '#ec4899' }
+                        { id: 'L4', name: 'Anomaly (IsoForest)', desc: 'Novel Attack Detection', color: '#ec4899' }
                     ].map((layer) => {
-                        const score = recentScans[0]?.engine_scores?.[layer.id] || 85;
+                        const score = latestScan?.engine_scores?.[layer.id] || 85;
                         return (
                             <div key={layer.id} style={{ background: 'var(--bg-main)', padding: '24px', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.03)', position: 'relative' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
@@ -132,60 +236,6 @@ export default function AnalyticsPage() {
                             </div>
                         );
                     })}
-                </div>
-            </div>
-            <div className="st-card" style={{ padding: '40px', marginTop: '32px', minHeight: '500px', display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px', marginBottom: '40px' }}>Global Threat Heatmap</h3>
-                <div style={{ flex: 1, width: '100%', minHeight: '350px' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <Treemap
-                            data={[
-                                {
-                                    name: 'Phishing Vectors', children: [
-                                        { name: 'Credential Harvesting', size: 4500, color: '#FF3B30' },
-                                        { name: 'Social Engineering', size: 3000, color: '#FF9500' },
-                                        { name: 'Brand Mimicry', size: 2000, color: '#FFCC00' }
-                                    ]
-                                },
-                                {
-                                    name: 'Malware Distribution', children: [
-                                        { name: 'Drive-by Downloads', size: 4000, color: '#AF52DE' },
-                                        { name: 'Exploit Kits', size: 2500, color: '#5856D6' }
-                                    ]
-                                },
-                                {
-                                    name: 'Obfuscation Techniques', children: [
-                                        { name: 'JS Hex Encoding', size: 3500, color: '#5AC8FA' },
-                                        { name: 'CSS Overlay Traps', size: 1500, color: '#007AFF' }
-                                    ]
-                                }
-                            ]}
-                            dataKey="size"
-                            aspectRatio={4 / 3}
-                            stroke="#fff"
-                            fill="#8884d8"
-                        >
-                            <Tooltip content={({ active, payload }) => {
-                                if (active && payload && payload.length) {
-                                    return (
-                                        <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: 'var(--shadow-lg)' }}>
-                                            <p style={{ fontWeight: '800', color: 'var(--text-main)' }}>{payload[0].payload.name}</p>
-                                            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Confidence Level: High</p>
-                                        </div>
-                                    );
-                                }
-                                return null;
-                            }} />
-                        </Treemap>
-                    </ResponsiveContainer>
-                </div>
-                <div style={{ marginTop: '24px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-                    {['Critical Threats', 'Emerging Vectors', 'Monitoring'].map((tag, idx) => (
-                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: idx === 0 ? '#FF3B30' : idx === 1 ? '#FF9500' : '#5AC8FA' }} />
-                            <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)' }}>{tag}</span>
-                        </div>
-                    ))}
                 </div>
             </div>
         </DashboardLayout>

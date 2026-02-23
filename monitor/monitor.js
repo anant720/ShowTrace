@@ -152,6 +152,10 @@
         const safeResHeaders = req.responseHeaders || [];
         const findings = extractSensitiveData(req);
 
+        // Enterprise Security Findings (from Backend)
+        const securityScore = req.security_score;
+        const securityFindings = req.security_findings || [];
+
         let alertHtml = '';
         if (findings.length > 0) {
             alertHtml = `
@@ -167,8 +171,40 @@
             `;
         }
 
+        let securityHtml = '';
+        if (securityScore !== undefined) {
+            securityHtml = `
+                <div class="m-security-score-banner">
+                    <div class="m-score-circle">${Math.round(securityScore)}</div>
+                    <div>
+                        <div style="font-weight: 800; font-size: 14px; color: var(--m-text);">Security Posture Score</div>
+                        <div style="font-size: 12px; color: var(--m-text-muted);">Passive configuration & vuln audit</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (securityFindings.length > 0) {
+            securityHtml += `
+                <div class="m-section-title">Vulnerability Findings</div>
+                <div class="m-security-findings">
+                    ${securityFindings.map(f => `
+                        <div class="m-finding-card">
+                            <div class="m-finding-header">
+                                <span class="m-finding-title">${f.title}</span>
+                                <span class="m-severity-tag ${f.severity}">${f.severity}</span>
+                            </div>
+                            <div class="m-finding-desc">${f.description}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
         inspectorContent.innerHTML = `
+            ${securityHtml}
             ${alertHtml}
+            <div class="m-section-title">Request Status</div>
             <div class="m-status-pill ${statusClass}" style="margin-bottom: 20px;">STATUS ${req.statusCode || 'FAILED'} ${req.method}</div>
             
             <div class="m-section-title">Request URL</div>

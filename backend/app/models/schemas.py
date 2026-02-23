@@ -72,6 +72,9 @@ class NetworkRequest(BaseModel):
     method: str
     type: str
     timestamp: int
+    headers: Optional[List[dict]] = Field(default_factory=list)
+    responseHeaders: Optional[List[dict]] = Field(default_factory=list)
+    statusCode: Optional[int] = None
 
 
 class MetaInfo(BaseModel):
@@ -135,6 +138,8 @@ class AnalyzeResponse(BaseModel):
     confidence: float = 1.0
     engine_scores: Optional[dict] = None
     explainability: Optional[dict] = None
+    security_score: Optional[float] = None
+    security_findings: Optional[List[dict]] = Field(default_factory=list)
     source: Optional[str] = None
 
 

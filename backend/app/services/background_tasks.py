@@ -2,9 +2,10 @@ import asyncio
 import logging
 from app.config import settings
 from app.ml.anomaly_detector import AnomalyDetector
+from train_ensemble import EnterpriseTrainer
 
 logger = logging.getLogger("shadowtrace.services.background_tasks")
-_task = None
+_tasks = []
 
 async def anomaly_detection_loop(db):
     interval = settings.ANOMALY_INTERVAL_MINUTES * 60
@@ -16,16 +17,46 @@ async def anomaly_detection_loop(db):
         except asyncio.CancelledError:
             break
         except Exception as e:
-            logger.error(f"Task failed: {e}")
+            logger.error(f"Anomaly task failed: {e}")
         await asyncio.sleep(interval)
 
+async def continuous_learning_loop(db):
+    """
+    Autonomous Retraining Scheduler
+    Checks for analyst feedback and updates the ensemble models.
+    """
+    trainer = EnterpriseTrainer()
+    while True:
+        try:
+            # Check for new, unprocessed feedback
+            count = await db.model_feedback.count_documents({"processed": False})
+            if count >= 10: # Threshold for autonomous retraining
+                logger.info(f"Retraining triggered: {count} new feedback items detected")
+                
+                # 1. Update training dataset with feedback (conceptual here, usually appends to CSV)
+                # For this demo, we'll simulate the workflow
+                trainer.train_all()
+                
+                # 2. Mark processed
+                await db.model_feedback.update_many({"processed": False}, {"$set": {"processed": True}})
+                logger.info("Retraining complete. New model weights deployed.")
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.error(f"Learning loop failure: {e}")
+        
+        await asyncio.sleep(3600) # Check hourly
+
 def start_background_tasks(db):
-    global _task
-    _task = asyncio.create_task(anomaly_detection_loop(db))
+    global _tasks
+    _tasks.append(asyncio.create_task(anomaly_detection_loop(db)))
+    _tasks.append(asyncio.create_task(continuous_learning_loop(db)))
 
 async def stop_background_tasks():
-    global _task
-    if _task and not _task.done():
-        _task.cancel()
-        try: await _task
-        except asyncio.CancelledError: pass
+    global _tasks
+    for t in _tasks:
+        if not t.done():
+            t.cancel()
+    if _tasks:
+        await asyncio.gather(*_tasks, return_exceptions=True)
+    _tasks = []

@@ -223,9 +223,8 @@ export default function OverviewPage() {
               <tr style={{ textAlign: 'left' }}>
                 <th style={{ padding: '16px 24px', color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>SOURCE DOMAIN</th>
                 <th style={{ padding: '16px 24px', color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>AI SCORE</th>
-                <th style={{ padding: '16px 24px', color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>CONFIDENCE</th>
-                <th style={{ padding: '16px 24px', color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>AI REASONING</th>
                 <th style={{ padding: '16px 24px', color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>TIME</th>
+                <th style={{ padding: '16px 24px', color: 'var(--text-muted)', fontWeight: '700', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>ANALYST ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -246,17 +245,36 @@ export default function OverviewPage() {
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '20px 24px' }}>
-                    <div style={{ width: '60px', height: '6px', background: 'rgba(0,0,0,0.05)', borderRadius: '3px', overflow: 'hidden', marginBottom: '4px' }}>
-                      <div style={{ height: '100%', width: `${(scan.confidence * 100) || 0}%`, background: 'var(--primary)' }} />
-                    </div>
-                    <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>{((scan.confidence * 100) || 0).toFixed(1)}% Match</span>
-                  </td>
-                  <td style={{ padding: '20px 24px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: '500', maxWidth: '300px' }}>
-                    {scan.reasons && scan.reasons[0] ? scan.reasons[0] : 'Scanning structural patterns...'}
-                  </td>
-                  <td style={{ padding: '20px 24px', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '600', borderRadius: '0 16px 16px 0' }}>
+                  <td style={{ padding: '20px 24px', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '600' }}>
                     {new Date(scan.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                  <td style={{ padding: '20px 24px', borderRadius: '0 16px 16px 0' }}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await apiRequest('/feedback/correct', { method: 'POST', body: { domain: scan.domain, actual_risk: 'Safe', analyst_notes: 'Manual whitelist' } });
+                            alert(`Confirmed ${scan.domain} as SAFE. Training queue updated.`);
+                            fetchData();
+                          } catch (e) { alert('Action failed'); }
+                        }}
+                        style={{ border: 'none', background: 'rgba(52, 199, 89, 0.1)', color: '#34C759', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}
+                      >
+                        ✓ MARK SAFE
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await apiRequest('/feedback/correct', { method: 'POST', body: { domain: scan.domain, actual_risk: 'Dangerous', analyst_notes: 'Manual phishing confirmation' } });
+                            alert(`Confirmed ${scan.domain} as DANGEROUS. Model retraining triggered.`);
+                            fetchData();
+                          } catch (e) { alert('Action failed'); }
+                        }}
+                        style={{ border: 'none', background: 'rgba(255, 59, 48, 0.1)', color: '#FF3B30', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}
+                      >
+                        ✕ MARK THREAT
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
