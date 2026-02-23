@@ -107,6 +107,11 @@
             <div class="m-section-title">Request URL</div>
             <div class="m-header-list" style="word-break: break-all; margin-bottom: 20px; color: #3b82f6;">${req.url}</div>
 
+            <div class="m-section-title">Request Body (Payload)</div>
+            <div class="m-header-list" style="background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2); color: #10b981;">
+                <pre style="white-space: pre-wrap; word-break: break-all;">${req.requestBody ? req.requestBody : '<span style="opacity: 0.5;">No payload captured (GET/Empty)</span>'}</pre>
+            </div>
+
             <div class="m-section-title">Request Headers</div>
             <div class="m-header-list">
                 ${req.requestHeaders.length > 0 ? req.requestHeaders.map(h => `

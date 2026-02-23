@@ -19,18 +19,33 @@ const requestBuffer = {};
 chrome.webRequest.onBeforeRequest.addListener(
     (details) => {
         if (details.tabId <= 0) return;
+
+        let rawBody = null;
+        if (details.requestBody) {
+            if (details.requestBody.raw) {
+                try {
+                    const decoder = new TextDecoder("utf-8");
+                    rawBody = decoder.decode(details.requestBody.raw[0].bytes);
+                } catch (e) { rawBody = "[Binary/Unparseable Data]"; }
+            } else if (details.requestBody.formData) {
+                rawBody = JSON.stringify(details.requestBody.formData);
+            }
+        }
+
         requestBuffer[details.requestId] = {
             id: details.requestId,
             url: details.url,
             method: details.method,
             type: details.type,
             timestamp: Date.now(),
+            requestBody: rawBody,
             requestHeaders: [],
             responseHeaders: [],
             statusCode: 0
         };
     },
-    { urls: ["<all_urls>"] }
+    { urls: ["<all_urls>"] },
+    ["requestBody"]
 );
 
 chrome.webRequest.onBeforeSendHeaders.addListener(
