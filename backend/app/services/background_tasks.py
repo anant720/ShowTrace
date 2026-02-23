@@ -24,20 +24,26 @@ async def continuous_learning_loop(db):
     """
     Autonomous Retraining Scheduler
     Checks for analyst feedback and updates the ensemble models.
+    Also monitors for model drift.
     """
+    from app.ml.drift_monitor import ModelDriftMonitor
     trainer = EnterpriseTrainer()
+    drift_monitor = ModelDriftMonitor(db)
+    
     while True:
         try:
-            # Check for new, unprocessed feedback
+            # 1. Check for Model Drift
+            drift_status = await drift_monitor.check_drift(sample_size=100)
+            if drift_status.get("has_drift"):
+                logger.warning("Model drift detected. Initiating emergency recalibration...")
+                trainer.train_all()
+                logger.info("Recalibration complete.")
+
+            # 2. Check for Analyst Feedback
             count = await db.model_feedback.count_documents({"processed": False})
             if count >= 10: # Threshold for autonomous retraining
                 logger.info(f"Retraining triggered: {count} new feedback items detected")
-                
-                # 1. Update training dataset with feedback (conceptual here, usually appends to CSV)
-                # For this demo, we'll simulate the workflow
                 trainer.train_all()
-                
-                # 2. Mark processed
                 await db.model_feedback.update_many({"processed": False}, {"$set": {"processed": True}})
                 logger.info("Retraining complete. New model weights deployed.")
         except asyncio.CancelledError:
