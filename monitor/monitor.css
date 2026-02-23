@@ -233,6 +233,35 @@ tr.selected td {
     color: #F59E0B;
 }
 
+.m-method.PUT {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.m-method.DELETE {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.m-method.PATCH {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+}
+
+.m-method.OPTIONS,
+.m-method.HEAD {
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+}
+
+.m-type {
+    color: var(--m-text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .m-url {
     color: var(--m-text-muted);
     overflow: hidden;

@@ -78,6 +78,25 @@ chrome.webRequest.onHeadersReceived.addListener(
     ["responseHeaders", "extraHeaders"]
 );
 
+chrome.webRequest.onErrorOccurred.addListener(
+    (details) => {
+        const req = requestBuffer[details.requestId];
+        if (req) {
+            req.statusCode = 0; // Indicates failure/blocked
+            req.error = details.error;
+
+            chrome.storage.session.get(`reqs_${details.tabId}`).then(data => {
+                const reqs = data[`reqs_${details.tabId}`] || [];
+                reqs.unshift(req);
+                if (reqs.length > CONFIG.MAX_REQUESTS_LOGGED) reqs.pop();
+                chrome.storage.session.set({ [`reqs_${details.tabId}`]: reqs });
+            });
+            delete requestBuffer[details.requestId];
+        }
+    },
+    { urls: ["<all_urls>"] }
+);
+
 // ── Message Listener ────────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!message || !message.type) return;

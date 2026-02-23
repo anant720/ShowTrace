@@ -67,9 +67,15 @@
         body.innerHTML = '';
         requests.forEach(req => {
             const time = formatTime(req.timestamp);
-            const status = req.statusCode || 'PENDING';
-            const statusClass = status >= 400 ? 'error' : status >= 300 ? 'redirect' : 'success';
+            const status = req.statusCode || (req.error ? 'FAILED' : 'PENDING');
+            const statusClass = (status === 'FAILED' || status >= 400) ? 'error' : status >= 300 ? 'redirect' : 'success';
             const isSelected = req.id === selectedRequestId;
+
+            // Format type for better readability
+            let displayType = req.type.toUpperCase();
+            if (displayType === 'XMLHTTPREQUEST') displayType = 'API/XHR';
+            if (displayType === 'IMAGE') displayType = 'ASSET/IMG';
+            if (displayType === 'SCRIPT') displayType = 'ASSET/JS';
 
             const tr = document.createElement('tr');
             if (isSelected) tr.classList.add('selected');
@@ -77,7 +83,7 @@
             tr.innerHTML = `
                 <td>${time}</td>
                 <td><span class="m-method ${req.method}">${req.method}</span></td>
-                <td style="color: #94A3B8; font-size: 12px;">${req.type}</td>
+                <td class="m-type">${displayType}</td>
                 <td class="m-url" title="${req.url}">${req.url}</td>
                 <td style="font-weight: 700; font-size: 11px;">
                     <span class="m-status-pill ${statusClass}">${status}</span>
