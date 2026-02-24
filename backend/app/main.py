@@ -270,19 +270,49 @@ async def lifespan(app: FastAPI):
                 inserted += 1
         logger.info(f"Trusted domains: {inserted} new, {len(DEFAULT_TRUSTED)} total defined")
 
-    # Seed admin user if not exists
+    # Seed or repair admin user + default organization
     from passlib.context import CryptContext
+    from datetime import datetime, timezone as tz
+    from bson import ObjectId
+
     pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    admin_exists = await db.admin_users.find_one({"username": settings.ADMIN_USERNAME})
-    if not admin_exists:
-        from datetime import datetime, timezone as tz
+
+    # Ensure a default organization exists for the bootstrap admin
+    default_org = await db.organizations.find_one({"slug": "default"})
+    if not default_org:
+        now = datetime.now(tz.utc)
+        default_org_doc = {
+            "name": "Default Organization",
+            "slug": "default",
+            "subscription_tier": "community",
+            "created_at": now,
+        }
+        result = await db.organizations.insert_one(default_org_doc)
+        default_org_id = str(result.inserted_id)
+        default_org_doc["_id"] = result.inserted_id
+        default_org = default_org_doc
+        logger.info("Default organization created for admin bootstrap")
+    else:
+        default_org_id = str(default_org["_id"])
+
+    admin_user = await db.admin_users.find_one({"username": settings.ADMIN_USERNAME})
+    if not admin_user:
         await db.admin_users.insert_one({
             "username": settings.ADMIN_USERNAME,
             "password_hash": pwd_ctx.hash(settings.ADMIN_PASSWORD),
             "role": "admin",
+            "org_id": default_org_id,
             "created_at": datetime.now(tz.utc),
         })
-        logger.info(f"Admin user '{settings.ADMIN_USERNAME}' seeded")
+        logger.info(f"Admin user '{settings.ADMIN_USERNAME}' seeded and bound to org {default_org_id}")
+    else:
+        # If the admin exists but has no org assignment, bind to default org
+        if not admin_user.get("org_id"):
+            await db.admin_users.update_one(
+                {"_id": admin_user["_id"]},
+                {"$set": {"org_id": default_org_id}},
+            )
+            logger.info(f"Admin user '{settings.ADMIN_USERNAME}' bound to default org {default_org_id}")
 
     # Start background tasks (anomaly detection, etc.)
     from app.services.background_tasks import start_background_tasks, stop_background_tasks
