@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.dependencies import get_database, verify_api_key, get_current_org_id
+from app.dependencies import get_database, verify_api_key, get_current_org_id, get_current_user_email, build_org_query
 from app.models.schemas import StatsResponse
 
 logger = logging.getLogger("shadowtrace.routers.stats")
@@ -19,21 +19,20 @@ router = APIRouter(tags=["Admin"])
 async def get_stats(
     db: AsyncIOMotorDatabase = Depends(get_database),
     org_id: str = Depends(get_current_org_id),
+    user_email: str = Depends(get_current_user_email),
 ) -> StatsResponse:
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     seven_days_ago = now - timedelta(days=7)
     one_day_ago = now - timedelta(hours=24)
+    base = build_org_query(org_id, user_email)
 
-    total_scans = await db.scan_logs.count_documents({"org_id": org_id})
-    scans_today = await db.scan_logs.count_documents({
-        "org_id": org_id,
-        "timestamp": {"$gte": today_start}
-    })
+    total_scans = await db.scan_logs.count_documents(base)
+    scans_today = await db.scan_logs.count_documents({**base, "timestamp": {"$gte": today_start}})
 
     # Risk distribution
     pipeline_risk = [
-        {"$match": {"org_id": org_id}},
+        {"$match": base},
         {"$group": {"_id": "$risk_level", "count": {"$sum": 1}}}
     ]
     risk_dist = {}
@@ -43,10 +42,7 @@ async def get_stats(
 
     # Top risky domains (last 7 days)
     pipeline_top = [
-        {"$match": {
-            "org_id": org_id,
-            "timestamp": {"$gte": seven_days_ago}
-        }},
+        {"$match": {**base, "timestamp": {"$gte": seven_days_ago}}},
         {"$group": {
             "_id": "$domain",
             "avg_score": {"$avg": "$final_risk_score"},
@@ -65,10 +61,7 @@ async def get_stats(
             "max_score": doc["max_score"],
         })
 
-    recent_reports = await db.reports.count_documents({
-        "org_id": org_id,
-        "timestamp": {"$gte": one_day_ago}
-    })
+    recent_reports = await db.reports.count_documents({**base, "timestamp": {"$gte": one_day_ago}})
 
     return StatsResponse(
         total_scans=total_scans,

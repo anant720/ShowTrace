@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from app.dependencies import get_database, require_analyst, get_current_org_id
+from app.dependencies import get_database, require_analyst, get_current_org_id, get_current_user_email, build_org_query
 
 logger = logging.getLogger("shadowtrace.routers.analytics")
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
@@ -12,12 +12,13 @@ async def get_summary(
     domain: str = Query(None), 
     db: AsyncIOMotorDatabase = Depends(get_database), 
     org_id: str = Depends(get_current_org_id),
+    user_email: str = Depends(get_current_user_email),
     _user: dict = Depends(require_analyst)
 ):
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     
-    match_query = {"org_id": org_id}
+    match_query = build_org_query(org_id, user_email)
     if domain:
         match_query["domain"] = domain
     
@@ -43,10 +44,10 @@ async def get_summary(
         "scans_today": scans_today,
         "growth_rate": growth,
         "risk_distribution": risk_dist,
-        "total_reports": await db.reports.count_documents({"org_id": org_id}),
-        "reports_today": await db.reports.count_documents({"org_id": org_id, "timestamp": {"$gte": today_start}}),
-        "active_anomalies": await db.anomalies.count_documents({"org_id": org_id, "acknowledged": False}),
-        "unique_domains": len(await db.scan_logs.distinct("domain", {"org_id": org_id})),
+        "total_reports": await db.reports.count_documents(build_org_query(org_id, user_email)),
+        "reports_today": await db.reports.count_documents({**build_org_query(org_id, user_email), "timestamp": {"$gte": today_start}}),
+        "active_anomalies": await db.anomalies.count_documents({**build_org_query(org_id, user_email), "acknowledged": False}),
+        "unique_domains": len(await db.scan_logs.distinct("domain", build_org_query(org_id, user_email))),
     }
 
 @router.get("/trends")
