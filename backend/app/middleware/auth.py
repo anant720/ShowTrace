@@ -1,23 +1,25 @@
 """
-ShadowTrace — API Key Authentication Middleware
+ShadowTrace — Auth Middleware (Fixed)
 
-Validates X-API-Key header on all requests except
-docs, health, and OpenAPI schema endpoints.
+Auth priority:
+  1. Bearer JWT (dashboard users)    → org_id from JWT payload
+  2. Bearer Google OAuth (SSO)       → org_id from DB lookup
+  3. X-API-Key (extension)           → org_id = "community"
+  4. No auth on exempt paths
 """
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from google.oauth2 import id_token
-from google.auth.transport import requests
 from app.config import settings
+from app.utils.jwt_handler import verify_token
 import logging
 
 logger = logging.getLogger("shadowtrace.middleware.auth")
 
-# Paths exempt from authentication
 EXEMPT_PATHS = {"/docs", "/openapi.json", "/redoc", "/health", "/favicon.ico"}
-EXEMPT_PREFIXES = ("/auth/", "/analytics/")
+EXEMPT_PREFIXES = ("/auth/",)
+
 
 class OAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -27,73 +29,73 @@ class OAuthMiddleware(BaseHTTPMiddleware):
         if path in EXEMPT_PATHS or path.startswith(EXEMPT_PREFIXES):
             return await call_next(request)
 
-        # Skip OPTIONS (CORS preflight)
+        # Skip CORS preflight
         if request.method == "OPTIONS":
             return await call_next(request)
 
-        # Extract Bearer token from Authorization header
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            # Fallback for old extension versions using X-API-Key for now
-            api_key = request.headers.get("X-API-Key")
-            if api_key == settings.API_KEY:
-                request.state.org_id = "community"
+        auth_header = request.headers.get("Authorization", "")
+
+        # ── Branch 1: Bearer token ──────────────────────────────────
+        if auth_header.startswith("Bearer "):
+            token = auth_header.split(" ", 1)[1]
+
+            # 1a. Try ShadowTrace JWT first (dashboard login)
+            payload = verify_token(token)
+            if payload:
+                request.state.org_id  = payload.get("org_id", "community")
+                request.state.user_id = payload.get("sub", "")
+                request.state.role    = payload.get("role", "member")
                 return await call_next(request)
-            
-            return JSONResponse(
-                status_code=401,
-                content={"detail": "Missing Authorization header"},
-            )
 
-        token = auth_header.split(" ")[1]
+            # 1b. Fall through to Google OAuth (enterprise SSO)
+            try:
+                from google.oauth2 import id_token as google_id_token
+                from google.auth.transport import requests as google_requests
+                idinfo = google_id_token.verify_oauth2_token(
+                    token,
+                    google_requests.Request(),
+                    audience=settings.GOOGLE_CLIENT_ID,
+                )
+                email = idinfo.get("email")
+                request.state.user_email = email
 
-        try:
-            # Verify the ID token using Google's public keys
-            idinfo = id_token.verify_oauth2_token(
-                token, 
-                requests.Request(), 
-                audience=settings.GOOGLE_CLIENT_ID
-            )
-
-            email = idinfo.get('email')
-            request.state.user_email = email
-            
-            # Multi-tenant resolution
-            from app.database import get_db
-            from bson import ObjectId
-            db = get_db()
-            
-            # 1. Get the admin user record
-            user = await db.admin_users.find_one({"email": email})
-            if not user:
-                request.state.org_id = "community"
-                return await call_next(request)
-                
-            request.state.user_id = str(user["_id"])
-            
-            # 2. Check for X-Org-ID preference
-            requested_org_id = request.headers.get("X-Org-ID")
-            
-            if requested_org_id and requested_org_id != "community":
-                # Verify membership
-                membership = await db.memberships.find_one({
-                    "user_id": str(user["_id"]),
-                    "org_id": requested_org_id
-                })
-                if membership:
-                    request.state.org_id = requested_org_id
+                from app.database import get_db
+                from bson import ObjectId
+                db = get_db()
+                user = await db.admin_users.find_one({"email": email})
+                if not user:
+                    request.state.org_id = "community"
                     return await call_next(request)
-                else:
-                    # Fallback to default or community if not a member
-                    request.state.org_id = user.get("org_id", "community")
-            else:
-                request.state.org_id = user.get("org_id", "community")
-            
-        except ValueError as e:
-            logger.warning(f"Invalid Google ID Token: {e}")
-            return JSONResponse(
-                status_code=401,
-                content={"detail": f"Invalid authentication token: {str(e)}"},
-            )
 
-        return await call_next(request)
+                request.state.user_id = str(user["_id"])
+
+                # Honour X-Org-ID header if member
+                requested_org = request.headers.get("X-Org-ID")
+                if requested_org and requested_org != "community":
+                    membership = await db.memberships.find_one(
+                        {"user_id": str(user["_id"]), "org_id": requested_org}
+                    )
+                    request.state.org_id = requested_org if membership else user.get("org_id", "community")
+                else:
+                    request.state.org_id = user.get("org_id", "community")
+
+                return await call_next(request)
+
+            except Exception as e:
+                logger.warning(f"Token verification failed: {e}")
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Invalid authentication token"},
+                )
+
+        # ── Branch 2: X-API-Key (extension) ──────────────────────────
+        api_key = request.headers.get("X-API-Key")
+        if api_key == settings.API_KEY:
+            request.state.org_id = "community"
+            return await call_next(request)
+
+        # ── Branch 3: No auth ─────────────────────────────────────────
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Missing Authorization header"},
+        )
