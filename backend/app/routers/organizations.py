@@ -118,6 +118,12 @@ async def invite_member(
         upsert=True
     )
 
+    # Store member_key on the invitation record too (manual onboarding / debugging)
+    await db.invitations.update_one(
+        {"org_id": org_id, "email": request.email},
+        {"$set": {"member_key": member_key}},
+    )
+
     # Fetch org name for email body
     org_doc = await db.organizations.find_one({"_id": ObjectId(org_id)})
     org_name = (org_doc or {}).get("name", "ShadowTrace Organization")
@@ -347,6 +353,7 @@ async def generate_member_key(
 @router.get("/activate/{key}", summary="Validate a member key (called by extension)")
 async def activate_member_key(
     key: str,
+    email: str | None = None,
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """
@@ -357,6 +364,27 @@ async def activate_member_key(
     record = await db.member_keys.find_one({"key": key, "active": True})
     if not record:
         raise HTTPException(status_code=404, detail="Invalid or revoked member key")
+
+    # If the extension provides the signed-in browser email, enforce match.
+    if email:
+        provided = email.strip().lower()
+        expected = (record.get("email") or "").strip().lower()
+        if expected and provided != expected:
+            raise HTTPException(status_code=401, detail="Member key is not valid for this email")
+
+        # Also ensure an active invitation exists (manual onboarding path)
+        invite = await db.invitations.find_one(
+            {
+                "org_id": record["org_id"],
+                "email": record.get("email"),
+                "member_key": key,
+            }
+        )
+        if not invite:
+            raise HTTPException(status_code=401, detail="No valid invitation found for this key/email")
+        exp = invite.get("expires_at")
+        if exp and isinstance(exp, datetime) and exp.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+            raise HTTPException(status_code=401, detail="Invitation expired")
 
     # Fetch org name for display
     try:

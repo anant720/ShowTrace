@@ -101,6 +101,16 @@ class OAuthMiddleware(BaseHTTPMiddleware):
                 db = get_db()
                 record = await db.member_keys.find_one({"key": member_key, "active": True})
                 if record:
+                    # Optional hard-binding: if extension sends an asserted user email, enforce it matches
+                    asserted_email = request.headers.get("X-User-Email")
+                    if asserted_email:
+                        asserted_email = asserted_email.strip().lower()
+                        expected_email = (record.get("email") or "").strip().lower()
+                        if expected_email and asserted_email != expected_email:
+                            return JSONResponse(
+                                status_code=401,
+                                content={"detail": "Member key is not valid for this user"},
+                            )
                     request.state.org_id     = record["org_id"]
                     request.state.user_email = record["email"]
                     return await call_next(request)

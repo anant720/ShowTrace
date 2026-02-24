@@ -221,20 +221,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else if (message.type === CONFIG.MSG_TYPE.ACTIVATE_KEY) {
         // Popup is asking us to validate + store an org member key
         const key = message.key;
-        fetch(`${CONFIG.ACTIVATE_ENDPOINT}/${key}`)
-            .then(r => r.json())
-            .then(async (info) => {
-                if (info.valid) {
-                    await chrome.storage.local.set({
-                        [CONFIG.STORAGE_KEYS.MEMBER_KEY]: key,
-                        [CONFIG.STORAGE_KEYS.ORG_INFO]: info
-                    });
-                    sendResponse({ success: true, org_name: info.org_name, email: info.email });
-                } else {
-                    sendResponse({ success: false, error: 'Key not recognized' });
-                }
-            })
-            .catch(err => sendResponse({ success: false, error: err.message }));
+        getUserEmail().then((email) => {
+            const url = `${CONFIG.ACTIVATE_ENDPOINT}/${key}?email=${encodeURIComponent(email)}`;
+            fetch(url)
+                .then(r => r.json())
+                .then(async (info) => {
+                    if (info.valid) {
+                        await chrome.storage.local.set({
+                            [CONFIG.STORAGE_KEYS.MEMBER_KEY]: key,
+                            [CONFIG.STORAGE_KEYS.ORG_INFO]: info
+                        });
+                        sendResponse({ success: true, org_name: info.org_name, email: info.email });
+                    } else {
+                        sendResponse({ success: false, error: 'Key not recognized' });
+                    }
+                })
+                .catch(err => sendResponse({ success: false, error: err.message }));
+        });
         return true; // async
 
     } else if (message.type === CONFIG.MSG_TYPE.GET_ORG_INFO) {
@@ -559,6 +562,11 @@ async function sendToBackend(data, retry = 0) {
 
         if (memberKey) {
             headers['X-Member-Key'] = memberKey;
+            // Bind key usage to the signed-in browser identity (best-effort)
+            try {
+                const email = await getUserEmail();
+                if (email) headers['X-User-Email'] = email;
+            } catch (e) { /* ignore */ }
         } else {
             // Priority 2: Google OAuth (silent — no popup)
             const token = await getAuthToken(false);
