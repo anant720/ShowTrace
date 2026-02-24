@@ -312,6 +312,64 @@
         els.protectionToggle.addEventListener('change', handleProtectionToggle);
     }
 
+    // ── Org Key Management ────────────────────────────────────────────
+    function initOrgKey() {
+        chrome.runtime.sendMessage({ type: 'ST_GET_ORG_INFO' }, (resp) => {
+            if (resp && resp.memberKey && resp.orgInfo) {
+                showOrgActive(resp.orgInfo);
+            } else {
+                showOrgSetup();
+            }
+        });
+
+        const activateBtn = $('activateKeyBtn');
+        if (activateBtn) {
+            activateBtn.addEventListener('click', () => {
+                const key = $('orgKeyInput')?.value?.trim();
+                if (!key) return;
+                $('keyStatus').textContent = 'Validating...';
+                $('keyStatus').style.color = '#94a3b8';
+                chrome.runtime.sendMessage({ type: 'ST_ACTIVATE_KEY', key }, (resp) => {
+                    if (resp?.success) {
+                        $('keyStatus').textContent = '';
+                        showOrgActive({ org_name: resp.org_name, email: resp.email });
+                    } else {
+                        $('keyStatus').textContent = `✗ ${resp?.error || 'Invalid key'}`;
+                        $('keyStatus').style.color = '#ef4444';
+                    }
+                });
+            });
+        }
+
+        const clearBtn = $('clearKeyBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                chrome.storage.local.remove(['st_member_key', 'st_org_info'], () => {
+                    showOrgSetup();
+                });
+            });
+        }
+    }
+
+    function showOrgActive(info) {
+        const active = $('orgActiveView');
+        const setup = $('orgSetupView');
+        if (active) { active.style.display = 'block'; }
+        if (setup) { setup.style.display = 'none'; }
+        if ($('orgNameDisplay')) $('orgNameDisplay').textContent = info.org_name || '—';
+        if ($('orgEmailDisplay')) $('orgEmailDisplay').textContent = info.email || '—';
+    }
+
+    function showOrgSetup() {
+        const active = $('orgActiveView');
+        const setup = $('orgSetupView');
+        if (active) { active.style.display = 'none'; }
+        if (setup) { setup.style.display = 'block'; }
+        if ($('orgKeyInput')) $('orgKeyInput').value = '';
+        if ($('keyStatus')) $('keyStatus').textContent = '';
+    }
+
     // Run
     init();
+    initOrgKey();
 })();

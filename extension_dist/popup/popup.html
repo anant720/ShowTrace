@@ -134,6 +134,34 @@
         <div class="st-network-empty">Monitoring active tab traffic...</div>
       </div>
     </div>
+    <!-- Org Key Section -->
+    <div id="orgKeyCard"
+      style="padding:12px 16px;background:rgba(255,255,255,0.04);border-top:1px solid rgba(255,255,255,0.08);">
+      <div id="orgActiveView" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">
+              Organization</div>
+            <div style="font-size:13px;font-weight:700;color:#38bdf8;margin-top:2px;" id="orgNameDisplay">—</div>
+            <div style="font-size:11px;color:#64748b;margin-top:1px;" id="orgEmailDisplay">—</div>
+          </div>
+          <button id="clearKeyBtn"
+            style="font-size:10px;color:#ef4444;background:none;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:4px 8px;cursor:pointer;">Remove</button>
+        </div>
+      </div>
+      <div id="orgSetupView">
+        <div
+          style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;">
+          Organization Key</div>
+        <div style="display:flex;gap:6px;">
+          <input id="orgKeyInput" type="text" placeholder="Paste your org key (st_mk_...)"
+            style="flex:1;font-size:11px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 10px;color:#e2e8f0;outline:none;font-family:monospace;">
+          <button id="activateKeyBtn"
+            style="font-size:11px;background:#3b82f6;color:white;border:none;border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:700;">✓</button>
+        </div>
+        <div id="keyStatus" style="font-size:10px;margin-top:4px;color:#64748b;"></div>
+      </div>
+    </div>
 
     <!-- Footer -->
     <footer class="st-footer">

@@ -153,3 +153,74 @@ async def list_invitations(
         invite["id"] = str(invite["_id"])
         
     return invites
+
+
+# ── Member Key (Extension Integration) ──────────────────────────────────────
+@router.post("/member-key", summary="Generate an extension key for a member")
+async def generate_member_key(
+    email: str,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    org_id: str = Depends(get_current_org_id),
+    _admin: dict = Depends(require_admin)
+):
+    """
+    Admin generates a unique key for a specific user's email.
+    The user pastes this key into the extension settings once.
+    From that point on, all their scans are attributed to this org.
+    """
+    if org_id == "community":
+        raise HTTPException(status_code=400, detail="Community org does not support member keys")
+
+    import secrets
+    key = "st_mk_" + secrets.token_urlsafe(32)
+
+    await db.member_keys.update_one(
+        {"org_id": org_id, "email": email},
+        {"$set": {
+            "org_id": org_id,
+            "email": email,
+            "key": key,
+            "created_at": datetime.now(timezone.utc),
+            "active": True
+        }},
+        upsert=True
+    )
+
+    return {
+        "member_key": key,
+        "email": email,
+        "org_id": org_id,
+        "instructions": (
+            "Share this key with the member. They should paste it in "
+            "the ShadowTrace extension → Settings → Organization Key."
+        )
+    }
+
+
+@router.get("/activate/{key}", summary="Validate a member key (called by extension)")
+async def activate_member_key(
+    key: str,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """
+    The extension calls this once after the user pastes their key.
+    Returns the org context so the extension can display org name.
+    Exempt from auth middleware — this IS the auth step.
+    """
+    record = await db.member_keys.find_one({"key": key, "active": True})
+    if not record:
+        raise HTTPException(status_code=404, detail="Invalid or revoked member key")
+
+    # Fetch org name for display
+    try:
+        org = await db.organizations.find_one({"_id": ObjectId(record["org_id"])})
+        org_name = org.get("name", "Unknown Org") if org else "Unknown Org"
+    except Exception:
+        org_name = "Unknown Org"
+
+    return {
+        "valid": True,
+        "org_id": record["org_id"],
+        "org_name": org_name,
+        "email": record["email"]
+    }

@@ -16,16 +16,19 @@ const CONFIG = {
     API_ENDPOINT: 'https://showtrace.onrender.com/analyze',
     POLICY_SYNC_ENDPOINT: 'https://showtrace.onrender.com/policies/sync',
     HEARTBEAT_ENDPOINT: 'https://showtrace.onrender.com/persistence/heartbeat',
+    ACTIVATE_ENDPOINT: 'https://showtrace.onrender.com/organizations/activate',
     API_KEY: 'st_api_kG9vX2mN8pL4wR5tZ1yQ7jS4nB0hF3d_',
     API_TIMEOUT_MS: 5000,
     API_RETRY_LIMIT: 2,
     POLICY_SYNC_INTERVAL_MS: 5 * 60 * 1000,
     HEARTBEAT_INTERVAL_MS: 2 * 60 * 1000,
     STORAGE_KEYS: {
-        INTEGRITY_KEY: 'st_integrity_key',  // 256-bit HMAC key (hex)
-        LAST_SEQ: 'st_last_seq',        // Monotonic event counter
-        LAST_HASH: 'st_last_hash',       // Hash of previous envelope (chain)
-        DEVICE_ID: 'st_device_id',       // Stable fallback installation_id
+        INTEGRITY_KEY: 'st_integrity_key',
+        LAST_SEQ: 'st_last_seq',
+        LAST_HASH: 'st_last_hash',
+        DEVICE_ID: 'st_device_id',
+        MEMBER_KEY: 'st_member_key',  // org member key entered by user
+        ORG_INFO: 'st_org_info',       // {org_id, org_name, email} from activation
     },
     OFFSCREEN_URL: 'offscreen/signer.html',
     ENVELOPE_VERSION: '1.2',
@@ -34,6 +37,8 @@ const CONFIG = {
         BEHAVIOR_ALERT: 'ST_BEHAVIOR_ALERT',
         RISK_RESULT: 'ST_RISK_RESULT',
         GET_RISK: 'ST_GET_RISK',
+        ACTIVATE_KEY: 'ST_ACTIVATE_KEY',  // popup → background: validate + store key
+        GET_ORG_INFO: 'ST_GET_ORG_INFO',  // popup → background: get current org context
     },
     RISK_LEVELS: { Safe: 'low', Suspicious: 'medium', Dangerous: 'high' },
     MAX_REQUESTS_LOGGED: 50,
@@ -207,13 +212,43 @@ chrome.webRequest.onErrorOccurred.addListener(
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!message || !message.type) return;
     const tabId = sender?.tab?.id;
+
     if (message.type === CONFIG.MSG_TYPE.SIGNAL_REPORT) {
         if (!tabId) return;
         handleSignalReport(tabId, message.payload);
         sendResponse({ received: true });
+
+    } else if (message.type === CONFIG.MSG_TYPE.ACTIVATE_KEY) {
+        // Popup is asking us to validate + store an org member key
+        const key = message.key;
+        fetch(`${CONFIG.ACTIVATE_ENDPOINT}/${key}`)
+            .then(r => r.json())
+            .then(async (info) => {
+                if (info.valid) {
+                    await chrome.storage.local.set({
+                        [CONFIG.STORAGE_KEYS.MEMBER_KEY]: key,
+                        [CONFIG.STORAGE_KEYS.ORG_INFO]: info
+                    });
+                    sendResponse({ success: true, org_name: info.org_name, email: info.email });
+                } else {
+                    sendResponse({ success: false, error: 'Key not recognized' });
+                }
+            })
+            .catch(err => sendResponse({ success: false, error: err.message }));
+        return true; // async
+
+    } else if (message.type === CONFIG.MSG_TYPE.GET_ORG_INFO) {
+        chrome.storage.local.get([CONFIG.STORAGE_KEYS.MEMBER_KEY, CONFIG.STORAGE_KEYS.ORG_INFO])
+            .then(data => sendResponse({
+                memberKey: data[CONFIG.STORAGE_KEYS.MEMBER_KEY] || null,
+                orgInfo: data[CONFIG.STORAGE_KEYS.ORG_INFO] || null
+            }));
+        return true;
+
     } else if (message.type === 'ST_WARM_UP') {
         fetch(CONFIG.API_ENDPOINT, { method: 'HEAD' }).catch(() => { });
         return false;
+
     } else if (message.type === CONFIG.MSG_TYPE.GET_RISK) {
         chrome.storage.session.get([`tab_${message.tabId}`, `reqs_${message.tabId}`]).then(data => {
             const riskData = data[`tab_${message.tabId}`] || null;
@@ -515,12 +550,22 @@ async function buildSignedEnvelope(data) {
 // ── Backend Transport ────────────────────────────────────────────────
 async function sendToBackend(data, retry = 0) {
     try {
-        const token = await getAuthToken(false);
         const envelope = await buildSignedEnvelope(data);
-
         const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        else headers['X-API-Key'] = CONFIG.API_KEY;
+
+        // Priority 1: Org member key (user pasted from dashboard)
+        const stored = await chrome.storage.local.get(CONFIG.STORAGE_KEYS.MEMBER_KEY);
+        const memberKey = stored[CONFIG.STORAGE_KEYS.MEMBER_KEY];
+
+        if (memberKey) {
+            headers['X-Member-Key'] = memberKey;
+        } else {
+            // Priority 2: Google OAuth (silent — no popup)
+            const token = await getAuthToken(false);
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            // Priority 3: Community API key (anonymous fallback)
+            else headers['X-API-Key'] = CONFIG.API_KEY;
+        }
 
         const response = await fetch(CONFIG.API_ENDPOINT, {
             method: 'POST',
@@ -529,9 +574,6 @@ async function sendToBackend(data, retry = 0) {
         });
 
         if (!response.ok) {
-            if (response.status === 401 && token) {
-                chrome.identity.removeCachedAuthToken({ token }, () => { });
-            }
             const errDetail = await response.text().catch(() => 'No detail');
             throw new Error(`Server returned ${response.status}: ${errDetail}`);
         }

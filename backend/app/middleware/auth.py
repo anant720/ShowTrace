@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger("shadowtrace.middleware.auth")
 
 EXEMPT_PATHS = {"/docs", "/openapi.json", "/redoc", "/health", "/favicon.ico"}
-EXEMPT_PREFIXES = ("/auth/",)
+EXEMPT_PREFIXES = ("/auth/", "/organizations/activate/")
 
 
 class OAuthMiddleware(BaseHTTPMiddleware):
@@ -88,7 +88,25 @@ class OAuthMiddleware(BaseHTTPMiddleware):
                     content={"detail": "Invalid authentication token"},
                 )
 
-        # ── Branch 2: X-API-Key (extension) ──────────────────────────
+        # ── Branch 2: X-Member-Key (extension with org key) ─────────
+        member_key = request.headers.get("X-Member-Key")
+        if member_key:
+            try:
+                from app.database import get_db
+                db = get_db()
+                record = await db.member_keys.find_one({"key": member_key, "active": True})
+                if record:
+                    request.state.org_id     = record["org_id"]
+                    request.state.user_email = record["email"]
+                    return await call_next(request)
+            except Exception as e:
+                logger.warning(f"Member key lookup failed: {e}")
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Invalid or revoked member key"},
+            )
+
+        # ── Branch 3: X-API-Key (extension without org key) ──────────
         api_key = request.headers.get("X-API-Key")
         if api_key == settings.API_KEY:
             request.state.org_id = "community"
