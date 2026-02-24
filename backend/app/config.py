@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     PORT: int = 8000
     ANOMALY_INTERVAL_MINUTES: int = 15
     ANOMALY_ZSCORE_THRESHOLD: float = 2.0
+    DEVICE_OFFLINE_MINUTES: int = 30
+    EXPORT_SIGNING_KEY: str = "shadowtrace-export-signing-key-change-in-production"
 
     @property
     def cors_origins_list(self) -> List[str]:

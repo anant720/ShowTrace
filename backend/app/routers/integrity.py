@@ -171,7 +171,8 @@ async def analyze_sequence_gap(
 ) -> dict:
     """
     Determines if the incoming seq represents a gap, reset, or normal increment.
-    Logs anomaly records accordingly.
+    Logs anomaly records accordingly and persists explicit integrity_gaps entries
+    for forensic-grade analysis.
     """
     last_record = await db.forensic_chain.find_one(
         {"installation_id": installation_id},
@@ -198,12 +199,16 @@ async def analyze_sequence_gap(
 
     # Gap
     gap = seq - last_seq - 1
+    # Original anomaly severity model
     severity = "LOW" if gap <= 5 else ("MEDIUM" if gap <= 50 else "HIGH")
+    # Integrity gap severity model: more than 1 consecutive missing event is HIGH
+    integrity_severity = "HIGH" if gap > 1 else "LOW"
 
     gap_info = {
         "state": "GAP_DETECTED",
         "gap": gap,
         "severity": severity,
+        "integrity_severity": integrity_severity,
         "expected_seq": last_seq + 1,
         "received_seq": seq,
     }
@@ -212,17 +217,37 @@ async def analyze_sequence_gap(
 
 
 async def _log_anomaly(installation_id, org_id, seq, last_seq, gap_info, db):
+    now = datetime.now(timezone.utc)
+    gap_size = gap_info.get("gap", 0)
+    expected_seq = last_seq + 1
+
+    # Behavioral anomaly record (existing dashboard model)
     await db.anomalies.insert_one({
         "anomaly_type": "SEQUENCE_GAP",
         "installation_id": installation_id,
         "org_id": org_id,
-        "expected_seq": last_seq + 1,
+        "expected_seq": expected_seq,
         "received_seq": seq,
-        "gap_size": gap_info.get("gap", 0),
+        "gap_size": gap_size,
         "severity": gap_info.get("severity", "UNKNOWN"),
         "state": gap_info.get("state"),
-        "detected_at": datetime.now(timezone.utc),
+        "detected_at": now,
         "acknowledged": False,
+    })
+
+    # Integrity gaps collection for device / incident engines
+    missing_sequences = list(range(expected_seq, seq)) if gap_size > 0 and gap_size <= 500 else []
+    await db.integrity_gaps.insert_one({
+        "installation_id": installation_id,
+        "org_id": org_id,
+        "last_known_seq": last_seq,
+        "first_missing_seq": expected_seq,
+        "observed_seq": seq,
+        "gap_size": gap_size,
+        "missing_sequences": missing_sequences,
+        "severity": gap_info.get("integrity_severity", gap_info.get("severity", "UNKNOWN")),
+        "state": gap_info.get("state"),
+        "detected_at": now,
     })
 
 
@@ -308,7 +333,11 @@ async def run_integrity_pipeline(
         "prev_hash": prev_hash,
         "gap_state": gap_info.get("state", "NORMAL"),
         "id_tier": header.get("id_tier", "derived"),
+        "agent_version": header.get("version"),
         "stored_at": now,
+        # For export-time re-verification of signatures
+        "canonical_envelope": canonical.decode("utf-8"),
+        "hmac": hmac_hex,
     })
 
     return {

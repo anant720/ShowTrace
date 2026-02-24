@@ -336,7 +336,7 @@ app.include_router(report.router)
 app.include_router(stats.router)
 
 # Phase 4, 5 & 6 + Persistence routers
-from app.routers import auth, analytics, feedback, organizations, intelligence, policies, connectors, remediation, simulation, marketplace, persistence, integrity
+from app.routers import auth, analytics, feedback, organizations, intelligence, policies, connectors, remediation, simulation, marketplace, persistence, integrity, devices, incidents
 app.include_router(auth.router)
 app.include_router(analytics.router)
 app.include_router(feedback.router)
@@ -349,6 +349,8 @@ app.include_router(simulation.router)
 app.include_router(marketplace.router)
 app.include_router(persistence.router)
 app.include_router(integrity.router)
+app.include_router(devices.router)
+app.include_router(incidents.router)
 
 
 @app.get("/health", tags=["System"])

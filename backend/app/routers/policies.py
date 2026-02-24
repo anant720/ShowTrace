@@ -5,13 +5,14 @@ Handles centralized security policy distribution for enterprise fleets.
 
 import logging
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from bson import ObjectId
 from datetime import datetime, timezone
 
 from app.dependencies import get_database, get_current_org_id, require_admin
 from app.models.schemas import FleetPolicy, PolicyUpdate
+from app.utils.audit import log_admin_action
 
 logger = logging.getLogger("shadowtrace.routers.policies")
 router = APIRouter(prefix="/policies", tags=["Fleet Policies"])
@@ -43,7 +44,8 @@ async def update_org_policy(
     update: PolicyUpdate,
     db: AsyncIOMotorDatabase = Depends(get_database),
     org_id: str = Depends(get_current_org_id),
-    admin = Depends(require_admin)
+    admin = Depends(require_admin),
+    request: Request = None,
 ):
     """
     Update the fleet security policy (org admins only).
@@ -56,8 +58,24 @@ async def update_org_policy(
         {"$set": update_data},
         upsert=True
     )
-    
-    return await db.fleet_policies.find_one({"org_id": org_id})
+
+    new_policy = await db.fleet_policies.find_one({"org_id": org_id})
+
+    if request is not None:
+        await log_admin_action(
+            db,
+            request,
+            org_id=org_id,
+            actor=admin,
+            action="policy.update",
+            resource_type="policy",
+            resource_id=str(new_policy.get("_id")) if new_policy else org_id,
+            old_value=None,
+            new_value={k: v for k, v in update_data.items() if k != "updated_at"},
+            metadata={},
+        )
+
+    return new_policy
 
 @router.get("/sync")
 async def sync_policy_for_extension(

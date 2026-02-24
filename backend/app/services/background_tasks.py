@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from app.config import settings
+from app.services.device_integrity import recompute_all_devices
 from app.ml.anomaly_detector import AnomalyDetector
 from app.ml.trainer import EnterpriseTrainer
 from app.services.retention_service import retention_scheduler
@@ -54,11 +55,32 @@ async def continuous_learning_loop(db):
         
         await asyncio.sleep(3600) # Check hourly
 
+
+async def integrity_maintenance_loop(db):
+    """
+    Nightly integrity maintenance:
+      - Recompute device integrity snapshots
+      - Ensure silent / offline devices are reflected in dashboards
+      - Leverage TTL indexes for nonce expiry (no manual work required)
+    """
+    # Stagger initial run
+    await asyncio.sleep(60)
+    while True:
+        try:
+            await recompute_all_devices(db)
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.error(f"Integrity maintenance task failed: {e}")
+        # Run once per 24 hours
+        await asyncio.sleep(86400)
+
 def start_background_tasks(db):
     global _tasks
     _tasks.append(asyncio.create_task(anomaly_detection_loop(db)))
     _tasks.append(asyncio.create_task(continuous_learning_loop(db)))
     _tasks.append(asyncio.create_task(retention_scheduler(db)))
+    _tasks.append(asyncio.create_task(integrity_maintenance_loop(db)))
 
 async def stop_background_tasks():
     global _tasks
