@@ -11,11 +11,18 @@ from app.ml.whitelist_manager import WhitelistManager
 from app.ml.normalization import Normalizer
 from app.ml.security_auditor import SecurityAuditor
 from app.utils.scrubber import CredentialScrubber
-from app.config.tier_config import get_tier_config
-from app.services.ai_remediation import analyze_and_remediate
-import bson
-
 from app.routers.integrity import run_integrity_pipeline
+
+# ── Tier config (inlined to avoid app/config.py vs app/config/ conflict) ──
+_TIER_LIMITS = {
+    "community":  {"features": {"ml_explainability": False, "forensic_reasoning": False}},
+    "pro":        {"features": {"ml_explainability": False, "forensic_reasoning": True}},
+    "enterprise": {"features": {"ml_explainability": True,  "forensic_reasoning": True}},
+    "guardian":   {"features": {"ml_explainability": True,  "forensic_reasoning": True}},
+}
+def get_tier_config(tier: str) -> dict:
+    return _TIER_LIMITS.get((tier or "community").lower(), _TIER_LIMITS["community"])
+
 
 logger = logging.getLogger("shadowtrace.services.risk_scorer")
 scorer = EnsembleScorer()
