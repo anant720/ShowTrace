@@ -7,7 +7,14 @@ import logging
 import asyncio
 from datetime import datetime, timedelta, timezone
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from app.config.tier_config import TIER_LIMITS
+
+# Inline tier limits (app/config/ directory was removed to fix package conflict)
+TIER_LIMITS = {
+    "community": {"retention_days": 7},
+    "pro":       {"retention_days": 90},
+    "enterprise":{"retention_days": 365},
+    "guardian":  {"retention_days": -1},  # -1 = permanent
+}
 
 logger = logging.getLogger("shadowtrace.services.retention")
 

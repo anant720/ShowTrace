@@ -7,7 +7,16 @@ import logging
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from datetime import datetime, timezone
 
-from app.config.tier_config import get_tier_config
+
+# Inline tier config (app/config/ directory was removed to fix package conflict)
+_TIER_LIMITS = {
+    "community":  {"features": {"autonomous_remediation": False}},
+    "pro":        {"features": {"autonomous_remediation": False}},
+    "enterprise": {"features": {"autonomous_remediation": True}},
+    "guardian":   {"features": {"autonomous_remediation": True}},
+}
+def get_tier_config(tier: str) -> dict:
+    return _TIER_LIMITS.get((tier or "community").lower(), _TIER_LIMITS["community"])
 from app.routers.policies import update_org_policy
 from app.models.schemas import PolicyUpdate
 
