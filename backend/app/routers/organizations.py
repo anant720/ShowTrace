@@ -12,7 +12,7 @@ from app.models.schemas import (
 )
 from app.utils.audit import log_admin_action
 from app.utils.rate_limiter import rate_limit_action
-from app.services.mailer import send_email_sendgrid, MailerError
+from app.services.mailer import send_email, MailerError
 from app.config import settings
 
 logger = logging.getLogger("shadowtrace.routers.organizations")
@@ -148,7 +148,7 @@ async def invite_member(
     )
 
     try:
-        send_email_sendgrid(
+        send_email(
             to_email=request.email,
             subject=subject,
             text=text,
@@ -219,7 +219,7 @@ async def resend_invite(
     )
 
     try:
-        send_email_sendgrid(to_email=email, subject=subject, text=text)
+        send_email(to_email=email, subject=subject, text=text)
         await db.invitations.update_one(
             {"_id": invite["_id"]},
             {"$set": {"email_status": "SENT", "resent_at": datetime.now(timezone.utc)}},

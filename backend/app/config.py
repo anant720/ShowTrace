@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     MAIL_FROM: str = ""
     DASHBOARD_BASE_URL: str = "http://localhost:3000"
 
+    # Email (SMTP) - easiest: Gmail + App Password
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+
     @property
     def cors_origins_list(self) -> List[str]:
         return ["*"]
