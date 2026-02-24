@@ -88,6 +88,10 @@ async def connect_db():
     await _db.invitations.create_index([("email", 1), ("org_id", 1)], unique=True)
     await _db.invitations.create_index("token", unique=True)
 
+    # Extension member keys
+    await _db.member_keys.create_index([("org_id", 1), ("email", 1)], unique=True)
+    await _db.member_keys.create_index("key", unique=True)
+
 async def close_db():
     global _client, _db
     if _client:

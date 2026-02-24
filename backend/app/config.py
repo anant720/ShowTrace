@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     DEVICE_OFFLINE_MINUTES: int = 30
     EXPORT_SIGNING_KEY: str = "shadowtrace-export-signing-key-change-in-production"
 
+    # Email (SendGrid)
+    SENDGRID_API_KEY: str = ""
+    MAIL_FROM: str = ""
+    DASHBOARD_BASE_URL: str = "http://localhost:3000"
+
     @property
     def cors_origins_list(self) -> List[str]:
         return ["*"]
