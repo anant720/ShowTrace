@@ -35,7 +35,13 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> List[str]:
-        return ["*"]
+        try:
+            # Expect CORS_ORIGINS as a JSON array string, e.g.
+            # '["https://shadow-trace-eight.vercel.app", "http://localhost:3000"]'
+            return json.loads(self.CORS_ORIGINS)
+        except Exception:
+            # Safe fallback during misconfiguration
+            return ["*"]
 
     class Config:
         env_file = ".env"
