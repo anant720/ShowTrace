@@ -79,7 +79,7 @@ async def verify_envelope_hmac(envelope_dict: dict, db, org_id: str) -> bool:
         org = await db.organizations.find_one({"_id": org_id})
 
     # Use org-specific secret if set, otherwise fall back to shared default key
-    integrity_key = (org or {}).get("integrity_secret", "shadowtrace_test_integrity_key_2025")
+    integrity_key = (org or {}).get("integrity_secret", settings.DEFAULT_INTEGRITY_SECRET)
 
     # Deep-copy header and pop hmac
     header_data = {k: v for k, v in envelope_dict.get("header", {}).items()}

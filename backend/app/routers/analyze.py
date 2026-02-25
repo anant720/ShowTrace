@@ -18,7 +18,7 @@ router = APIRouter(tags=["Analysis"])
 @router.post("/analyze", response_model=AnalyzeResponse, summary="Analyze page signals for phishing risk")
 async def analyze_url(
     request_data: dict,
-    db: AsyncIOMotorDatabase = Depends(get_database), # Assuming get_database is the correct dependency name
+    db: AsyncIOMotorDatabase = Depends(get_database),
     # ... other deps
     org_id: str = Depends(get_current_org_id),
 ) -> AnalyzeResponse:

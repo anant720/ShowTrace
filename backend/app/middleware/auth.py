@@ -156,6 +156,21 @@ class OAuthMiddleware(BaseHTTPMiddleware):
                 content={"detail": "Invalid or revoked member key"},
             )
 
+        # ── Branch 3: X-API-Key (Extension Legacy/Community Auth) ────
+        api_key = request.headers.get("X-API-Key")
+        if api_key:
+            if api_key == settings.API_KEY:
+                # Default to a "community" org context for anonymous extension users
+                request.state.org_id = "community"
+                request.state.user_email = "anonymous@shadowtrace.local"
+                request.state.role = "member"
+                return await call_next(request)
+            else:
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Invalid API Key"},
+                )
+
         # ── No valid auth ─────────────────────────────────────────────
         return JSONResponse(
             status_code=401,

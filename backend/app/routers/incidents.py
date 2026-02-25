@@ -454,7 +454,7 @@ async def export_incident(
                     except Exception:
                         org = None
                 integrity_key = (org or {}).get(
-                    "integrity_secret", "shadowtrace_test_integrity_key_2025"
+                    "integrity_secret", settings.DEFAULT_INTEGRITY_SECRET
                 )
                 message = canonical_envelope.encode("utf-8")
                 calc = _hmac.new(

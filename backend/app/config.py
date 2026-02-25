@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     ANOMALY_ZSCORE_THRESHOLD: float = 2.0
     DEVICE_OFFLINE_MINUTES: int = 30
     EXPORT_SIGNING_KEY: str = "shadowtrace-export-signing-key-change-in-production"
+    DEFAULT_INTEGRITY_SECRET: str = "shadowtrace_test_integrity_key_2025"
 
     # Email (SendGrid)
     SENDGRID_API_KEY: str = ""
