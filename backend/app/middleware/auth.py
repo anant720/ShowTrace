@@ -68,11 +68,43 @@ class OAuthMiddleware(BaseHTTPMiddleware):
                 from app.database import get_db
                 db = get_db()
                 user = await db.admin_users.find_one({"email": email})
-                if not user or not user.get("org_id"):
-                    return JSONResponse(
-                        status_code=403,
-                        content={"detail": "Google account is not assigned to an organization."},
-                    )
+
+                if not user:
+                    # ── AUTO-PROVISIONING: Check for pending invitation ──
+                    invite = await db.invitations.find_one({"email": email})
+                    if invite:
+                        from datetime import datetime, timezone
+                        # Create the user record
+                        user_doc = {
+                            "username": email.split('@')[0], # Fallback username
+                            "email": email,
+                            "password_hash": "SSO_ONLY", # Cannot login via traditional auth
+                            "role": invite.get("role", "member"),
+                            "org_id": invite["org_id"],
+                            "created_at": datetime.now(timezone.utc),
+                        }
+                        result = await db.admin_users.insert_one(user_doc)
+                        user = user_doc
+                        user["_id"] = result.inserted_id
+
+                        # Record membership
+                        await db.memberships.update_one(
+                            {"user_id": str(user["_id"]), "org_id": invite["org_id"]},
+                            {"$set": {"role": invite.get("role", "member"), "created_at": datetime.now(timezone.utc)}},
+                            upsert=True
+                        )
+
+                        # Mark invitation as accepted (or just log it)
+                        await db.invitations.update_one(
+                            {"_id": invite["_id"]},
+                            {"$set": {"email_status": "ACCEPTED", "accepted_at": datetime.now(timezone.utc)}}
+                        )
+                        logger.info(f"Auto-provisioned user {email} for org {invite['org_id']} via invitation")
+                    else:
+                        return JSONResponse(
+                            status_code=403,
+                            content={"detail": "Google account is not assigned to an organization and has no pending invitation."},
+                        )
 
                 request.state.user_id = str(user["_id"])
                 requested_org = request.headers.get("X-Org-ID")
