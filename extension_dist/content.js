@@ -72,21 +72,27 @@
     }, true);
 
     // ── Core scan functions ───────────────────────────────────────────
-    async function performScan() {
+    async function performScan(retryCount = 0) {
         try {
             if (typeof STSignals === 'undefined') {
-                console.warn('[ShadowTrace] STSignals not loaded yet, skipping scan');
+                if (retryCount < 10) {
+                    console.warn('[ShadowTrace] STSignals not ready, retrying... (' + (retryCount + 1) + ')');
+                    setTimeout(() => performScan(retryCount + 1), 200);
+                } else {
+                    console.error('[ShadowTrace] STSignals failed to load after 10 attempts');
+                }
                 return;
             }
 
             const domain = STSignals.extractDomainSignals(window.location.href);
             const forms = STSignals.scanForLoginForms();
+            const payload = STSignals.buildPayload(domain, forms, behavior);
 
             console.log(`[ShadowTrace] Scanning: ${domain.hostname}`);
 
             chrome.runtime.sendMessage({
                 type: 'ST_SIGNAL_REPORT',
-                payload: STSignals.buildPayload(domain, forms, behavior)
+                payload: payload
             });
         } catch (err) {
             console.error('[ShadowTrace] Scan error:', err);

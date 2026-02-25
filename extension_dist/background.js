@@ -598,7 +598,10 @@ async function sendToBackend(data, retry = 0) {
         const response = await fetch(CONFIG.API_ENDPOINT, {
             method: 'POST',
             headers,
-            body: JSON.stringify(envelope)
+            body: JSON.stringify({
+                header: envelope.header,
+                payload: envelope.payload
+            })
         });
 
         if (!response.ok) {

@@ -106,13 +106,22 @@
         });
     }
 
-    function pollForResult(tabId) {
-        // Poll for results
+    function pollForResult(tabId, attempts = 0) {
+        if (attempts > 10) {
+            setError('Analysis timed out. Try refreshing the page.');
+            return;
+        }
+
         setTimeout(() => {
             chrome.runtime.sendMessage({ type: 'ST_GET_RISK', tabId: tabId }, (data) => {
-                if (data) renderRiskData(data);
+                // We consider data valid if it has a risk_level set (meaning handleSignalReport finished)
+                if (data && data.risk_level) {
+                    renderRiskData(data);
+                } else {
+                    pollForResult(tabId, attempts + 1);
+                }
             });
-        }, 1500);
+        }, 1000);
     }
 
     function startNetworkPoller(tabId) {
