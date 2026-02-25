@@ -146,10 +146,24 @@ async def verify_hash_chain(
     if seq == 1:
         if prev_hash != "GENESIS":
             return {"valid": False, "reason": "GENESIS_HASH_MISMATCH"}
-        # Check no prior chain exists (reinstall / identity reset)
+        # ── PHASE 1.5: Genesis Reset Logic ──
+        # If a chain already exists and this is a genesis event, it's a RE-INSTALL.
+        # Wipe the old chain for this installation_id to allow a fresh start,
+        # otherwise unique index collisions on (installation_id, seq) will block it.
         prior = await db.forensic_chain.find_one({"installation_id": installation_id})
-        if prior and not genesis:
-            return {"valid": False, "reason": "GENESIS_WITHOUT_FLAG"}
+        if prior:
+            if genesis:
+                logger.warning(f"[ShadowTrace] Genesis Reset for installation={installation_id}. Wiping stale chain.")
+                await db.forensic_chain.delete_many({"installation_id": installation_id})
+                await db.nonce_registry.delete_many({"installation_id": installation_id})
+                await db.tamper_alerts.insert_one({
+                    "org_id": "SYSTEM",
+                    "installation_id": installation_id,
+                    "type": "GENESIS_RESET",
+                    "timestamp": datetime.now(timezone.utc),
+                })
+            else:
+                return {"valid": False, "reason": "GENESIS_WITHOUT_FLAG"}
         return {"valid": True, "reason": None}
 
     prev_record = await db.forensic_chain.find_one(

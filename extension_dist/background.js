@@ -354,9 +354,11 @@ async function getIntegrityKey() {
 // ── §B: Monotonic Sequence Counter ──────────────────────────────────
 async function getNextSeq() {
     let seq = (await chrome.storage.local.get(CONFIG.STORAGE_KEYS.LAST_SEQ))[CONFIG.STORAGE_KEYS.LAST_SEQ] || 0;
-    seq++;
+    return seq + 1;
+}
+
+async function advanceSeq(seq) {
     await chrome.storage.local.set({ [CONFIG.STORAGE_KEYS.LAST_SEQ]: seq });
-    return seq;
 }
 
 // ── §C: Hardware-Backed Installation Identity ───────────────────────
@@ -559,12 +561,11 @@ async function buildSignedEnvelope(data) {
     // Sign via offscreen worker (or inline fallback)
     const { hmac, envelopeHash } = await signViaOffscreen(envelopeSansHmac, integrityKey);
 
-    // Persist hash for next event's prev_hash BEFORE returning
-    await persistEnvelopeHash(envelopeHash);
-
     return {
         header: { ...headerSansHmac, hmac },
-        payload: data
+        payload: data,
+        _nextHash: envelopeHash, // Internal: for persistence after successful send
+        _seq: seq               // Internal: for sequence advancement
     };
 }
 
@@ -603,6 +604,16 @@ async function sendToBackend(data, retry = 0) {
         if (!response.ok) {
             const errDetail = await response.text().catch(() => 'No detail');
             throw new Error(`Server returned ${response.status}: ${errDetail}`);
+        }
+
+        // ── ATOMIC ADVancement ──
+        // Only advance the sequence and hash chain if the server successfully accepted the envelope.
+        // This prevents unrecoverable gaps if the scan is rejected or network fails.
+        if (envelope._seq && envelope._nextHash) {
+            await Promise.all([
+                advanceSeq(envelope._seq),
+                persistEnvelopeHash(envelope._nextHash)
+            ]);
         }
 
         const result = await response.json();
