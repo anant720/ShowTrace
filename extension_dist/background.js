@@ -128,33 +128,6 @@ async function saveToBuffer(requestId, data) {
     await chrome.storage.session.set({ [`buf_${requestId}`]: data });
 }
 
-async function getUserEmail() {
-    return new Promise((resolve) => {
-        try {
-            // Try privileged (enterprise) first; falls back gracefully on consumer Chrome
-            chrome.identity.getProfileUserInfo({ privilege: 'enabled' }, (info) => {
-                if (info && info.email) {
-                    resolve(info.email);
-                } else {
-                    // Non-privileged fallback — works on all regular consumer Chrome accounts
-                    chrome.identity.getProfileUserInfo((info2) => {
-                        resolve((info2 && info2.email) || 'anonymous-user@shadowtrace.local');
-                    });
-                }
-            });
-        } catch (e) {
-            // Last resort fallback
-            try {
-                chrome.identity.getProfileUserInfo((info2) => {
-                    resolve((info2 && info2.email) || 'system-identity@shadowtrace.local');
-                });
-            } catch (_) {
-                resolve('system-identity@shadowtrace.local');
-            }
-        }
-    });
-}
-
 async function finalizeRequest(requestId, tabId, updates = {}) {
     const bufferData = await getFromBuffer(requestId);
     if (!bufferData) return;
