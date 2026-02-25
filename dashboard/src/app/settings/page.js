@@ -40,6 +40,12 @@ export default function SettingsPage() {
         if (user?.org_id) {
             fetchMembers();
             fetchInvitations();
+            // Auto-refresh every 30 seconds
+            const interval = setInterval(() => {
+                fetchMembers();
+                fetchInvitations();
+            }, 30000);
+            return () => clearInterval(interval);
         }
     }, [user?.org_id]);
 
